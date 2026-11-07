@@ -19,7 +19,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.pabloguish.inspeccionterreno",
       "permissions": [
-        "android.permission.CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ]
     },
@@ -34,7 +36,8 @@
         "expo-image-picker",
         {
           "photosPermission": false,
-          "cameraPermission": "La app usa la cámara para tomar las fotos de la inspección."
+          "cameraPermission": "La app usa la cámara para tomar las fotos de la inspección.",
+          "microphonePermission": false
         }
       ]
     ],
