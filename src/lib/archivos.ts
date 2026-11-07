@@ -80,17 +80,35 @@ export async function fotoParaPdf(rutaRelativa: string, ancho = 700): Promise<st
   return `data:image/jpeg;base64,${r.base64}`;
 }
 
-/** Mueve el PDF generado (temporal) a la carpeta "reportes" con un nombre legible. */
-export async function guardarPdf(uriTemporal: string, nombreReporte: string): Promise<string> {
-  const limpio =
-    nombreReporte
+/** Nombre de archivo seguro: "Inspección PLANTA 01 07-11-2026" → "Inspeccion_PLANTA_01_07-11-2026" */
+export function nombreArchivoSeguro(texto: string) {
+  return (
+    texto
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-zA-Z0-9 _-]/g, '')
+      .replace(/[̀-ͯ]/g, '') // quita tildes
+      .replace(/ñ/g, 'n')
+      .replace(/Ñ/g, 'N')
+      .replace(/[^a-zA-Z0-9 _-]/g, '') // quita caracteres especiales
       .trim()
       .replace(/\s+/g, '_')
-      .slice(0, 60) || 'reporte';
-  const nombre = `${limpio}_${Date.now()}.pdf`;
-  await new File(uriTemporal).move(new File(carpeta('reportes'), nombre));
+      .replace(/_+/g, '_')
+      .slice(0, 80) || 'reporte'
+  );
+}
+
+/**
+ * Escribe el PDF (recibido en base64) en la carpeta "reportes" de la app.
+ * No se mueve ni copia el archivo temporal de expo-print porque está fuera de las
+ * carpetas a las que la app tiene permiso (ver explicación en pdf.ts).
+ */
+export async function guardarPdf(pdfBase64: string, nombreReporte: string): Promise<string> {
+  const dir = carpeta('reportes');
+  const base = nombreArchivoSeguro(nombreReporte);
+  // Si ya existe un reporte con el mismo nombre, se agrega _2, _3...
+  let nombre = `${base}.pdf`;
+  for (let n = 2; new File(dir, nombre).exists; n++) nombre = `${base}_${n}.pdf`;
+  const destino = new File(dir, nombre);
+  destino.create();
+  await destino.write(pdfBase64, { encoding: 'base64' });
   return `reportes/${nombre}`;
 }

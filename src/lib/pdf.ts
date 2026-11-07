@@ -98,9 +98,13 @@ export async function generarReporte(inspeccionId: number, nombre: string): Prom
   ${cuerpo}
 </body></html>`;
 
-  // Hoja A4 en puntos (595 x 842)
-  const { uri } = await Print.printToFileAsync({ html, width: 595, height: 842 });
-  const archivo = await guardarPdf(uri, nombre);
+  // Hoja A4 en puntos (595 x 842). expo-print escribe el PDF en la caché general de la
+  // app (cache/Print), que en Expo Go queda fuera de las carpetas que este proyecto puede
+  // leer: por eso move() o copy() fallan con "Missing 'READ' permission". En vez de tocar
+  // ese archivo, pedimos su contenido en base64 y lo escribimos en nuestra carpeta.
+  const resultado = await Print.printToFileAsync({ html, width: 595, height: 842, base64: true });
+  if (!resultado.base64) throw new Error('No se recibió el contenido del PDF.');
+  const archivo = await guardarPdf(resultado.base64, nombre);
   await finalizarInspeccion(inspeccionId);
   return guardarReporte({
     proyecto_id: proyecto.id,
