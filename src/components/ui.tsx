@@ -1,22 +1,25 @@
 // Componentes visuales reutilizables: botones grandes, menús desplegables, etc.
+// Todo el estilo viene de tema.ts; las pantallas no deben definir colores propios.
 import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colorEstado, colores, tamanos } from './tema';
+import { colorEstado, colorEstadoProyecto, colores, tamanos } from './tema';
+import { Text, TextInput } from './Texto';
+
+export { Text, TextInput };
 
 // ---------- Contenedor de pantalla ----------
 
@@ -33,6 +36,19 @@ export function Pantalla({ children, scroll = true }: { children: ReactNode; scr
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+// ---------- Logo para la barra superior (versión blanca sobre azul) ----------
+
+export function LogoBarra() {
+  return (
+    <Image
+      source={require('../../assets/teck/logo-blanco.png')}
+      style={{ width: 150, height: 36 }}
+      resizeMode="contain"
+      accessibilityLabel="Carmen de Andacollo / Teck"
+    />
   );
 }
 
@@ -90,6 +106,7 @@ export function Boton({
 
 // ---------- Textos ----------
 
+/** Título de sección: azul Teck con una línea fina debajo, como en los reportes. */
 export function Titulo({ children }: { children: ReactNode }) {
   return <Text style={estilos.titulo}>{children}</Text>;
 }
@@ -113,10 +130,26 @@ export function Tarjeta({ children, onPress }: { children: ReactNode; onPress?: 
   return <View style={estilos.tarjeta}>{children}</View>;
 }
 
-export function EstadoChip({ estado }: { estado: string | null | undefined }) {
+/** Etiqueta de estado en mayúsculas. `tipo="proyecto"` usa los colores sobrios de proyecto. */
+export function EstadoChip({ estado, tipo = 'punto' }: { estado: string | null | undefined; tipo?: 'punto' | 'proyecto' }) {
+  const c = tipo === 'proyecto' ? colorEstadoProyecto(estado ?? '') : colorEstado(estado);
   return (
-    <View style={[estilos.chip, { backgroundColor: colorEstado(estado) }]}>
-      <Text style={estilos.chipTexto}>{estado ?? 'Abierto'}</Text>
+    <View style={[estilos.chip, { backgroundColor: c.fondo }]}>
+      <Text style={[estilos.chipTexto, { color: c.texto }]}>{(estado ?? 'Abierto').toUpperCase()}</Text>
+    </View>
+  );
+}
+
+/** Tabla de datos estilo portada de reporte: etiqueta en gris a la izquierda, valor a la derecha. */
+export function TablaDatos({ filas }: { filas: [string, string][] }) {
+  return (
+    <View style={estilos.tabla}>
+      {filas.map(([etiqueta, valor], i) => (
+        <View key={etiqueta} style={[estilos.tablaFila, i === filas.length - 1 && { borderBottomWidth: 0 }]}>
+          <Text style={estilos.tablaEtiqueta}>{etiqueta}</Text>
+          <Text style={estilos.tablaValor}>{valor || '—'}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -130,7 +163,7 @@ export function Campo({ etiqueta, ...props }: TextInputProps & { etiqueta: strin
       <TextInput
         placeholderTextColor={colores.textoSuave}
         {...props}
-        style={[estilos.campo, props.multiline && { minHeight: 130, textAlignVertical: 'top' }]}
+        style={[estilos.campo, props.multiline && { minHeight: 130, textAlignVertical: 'top', paddingTop: 12 }]}
       />
     </View>
   );
@@ -175,7 +208,9 @@ export function Selector<T>({
         <Text style={estilos.selectorFlecha}>▼</Text>
       </Pressable>
       {elegida?.detalle ? (
-        <Text style={[estilos.textoSuave, { color: elegida.color ?? colores.textoSuave }]}>{elegida.detalle}</Text>
+        <Text style={[estilos.textoSuave, { color: elegida.color ?? colores.textoSuave, fontWeight: '700' }]}>
+          {elegida.detalle}
+        </Text>
       ) : null}
 
       <Modal visible={abierto} animationType="slide" onRequestClose={() => setAbierto(false)}>
@@ -306,6 +341,8 @@ export function Filtros<T extends string>({
   );
 }
 
+const borde = { borderWidth: tamanos.linea, borderColor: colores.borde, borderRadius: tamanos.radio };
+
 export const estilos = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: tamanos.espacio, paddingBottom: 40 },
@@ -317,54 +354,61 @@ export const estilos = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
   },
-  botonSecundario: { borderWidth: 3, borderColor: colores.primario },
-  botonTexto: { fontSize: 21, fontWeight: '800', textAlign: 'center' },
-  titulo: { fontSize: tamanos.titulo, fontWeight: '800', color: colores.texto, marginBottom: 12 },
-  etiqueta: { fontSize: tamanos.chico, fontWeight: '700', color: colores.texto, marginBottom: 6 },
-  textoSuave: { fontSize: tamanos.chico, color: colores.textoSuave, marginTop: 4 },
-  tarjeta: {
-    backgroundColor: colores.tarjeta,
-    borderRadius: tamanos.radio,
-    padding: tamanos.espacio,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#D5DAE1',
+  botonSecundario: { borderWidth: 2, borderColor: colores.primario },
+  botonTexto: { fontSize: 21, fontWeight: '700', textAlign: 'center' },
+  titulo: {
+    fontSize: tamanos.titulo,
+    fontWeight: '700',
+    color: colores.primario,
+    borderBottomWidth: 2,
+    borderBottomColor: colores.primario,
+    paddingBottom: 4,
+    marginBottom: 14,
   },
-  chip: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  chipTexto: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
+  etiqueta: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colores.textoSuave,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  textoSuave: { fontSize: tamanos.chico, color: colores.textoSuave, marginTop: 4 },
+  tarjeta: { ...borde, backgroundColor: colores.tarjeta, padding: tamanos.espacio, marginBottom: 12 },
+  chip: { alignSelf: 'flex-start', borderRadius: tamanos.radio, paddingHorizontal: 10, paddingVertical: 4 },
+  chipTexto: { fontWeight: '700', fontSize: 15, letterSpacing: 0.3 },
+  tabla: { ...borde, marginBottom: tamanos.espacio },
+  tablaFila: { flexDirection: 'row', borderBottomWidth: tamanos.linea, borderBottomColor: colores.borde },
+  tablaEtiqueta: {
+    width: '40%',
+    backgroundColor: colores.grisClaro,
+    padding: 10,
+    fontSize: 17,
+    fontWeight: '700',
+    borderRightWidth: tamanos.linea,
+    borderRightColor: colores.borde,
+  },
+  tablaValor: { flex: 1, padding: 10, fontSize: 18 },
   campo: {
+    ...borde,
     backgroundColor: colores.tarjeta,
-    borderWidth: 2,
-    borderColor: colores.borde,
-    borderRadius: tamanos.radio,
     fontSize: tamanos.texto,
     color: colores.texto,
     paddingHorizontal: 14,
     minHeight: tamanos.boton - 4,
   },
   selector: {
+    ...borde,
     backgroundColor: colores.tarjeta,
-    borderWidth: 2,
-    borderColor: colores.borde,
-    borderRadius: tamanos.radio,
     minHeight: tamanos.boton,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
   },
-  selectorTexto: { flex: 1, fontSize: tamanos.texto, color: colores.texto, fontWeight: '600' },
+  selectorTexto: { flex: 1, fontSize: tamanos.texto, fontWeight: '700' },
   selectorFlecha: { fontSize: 20, color: colores.primario, marginLeft: 8 },
-  opcion: {
-    backgroundColor: colores.tarjeta,
-    borderRadius: tamanos.radio,
-    borderWidth: 2,
-    borderColor: '#D5DAE1',
-    padding: 18,
-    marginBottom: 10,
-    minHeight: tamanos.boton,
-    justifyContent: 'center',
-  },
-  opcionTexto: { fontSize: 22, fontWeight: '700', color: colores.texto },
+  opcion: { ...borde, backgroundColor: colores.tarjeta, padding: 18, marginBottom: 10, minHeight: tamanos.boton, justifyContent: 'center' },
+  opcionTexto: { fontSize: 22, fontWeight: '700' },
   opcionDetalle: { fontSize: 17, fontWeight: '700', marginTop: 4 },
   fondoModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 16 },
   cajaModal: { backgroundColor: colores.fondo, borderRadius: tamanos.radio, padding: tamanos.espacio },
@@ -372,7 +416,7 @@ export const estilos = StyleSheet.create({
   filtro: {
     minHeight: 54,
     paddingHorizontal: 14,
-    borderRadius: 27,
+    borderRadius: tamanos.radio,
     borderWidth: 2,
     borderColor: colores.primario,
     backgroundColor: colores.tarjeta,

@@ -1,9 +1,9 @@
 // Historial de un punto: todas sus inspecciones con fecha, fotos, observación y estado.
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { colores } from '@/components/tema';
-import { EstadoChip, Pantalla, Tarjeta, TextoSuave, Titulo } from '@/components/ui';
+import { EstadoChip, Pantalla, Tarjeta, TextoSuave, Titulo, Text } from '@/components/ui';
 import { uriDe } from '@/lib/archivos';
 import { historialPunto, listarFotos, obtenerPunto, type Foto, type InspeccionPunto } from '@/lib/db';
 import { fechaHora } from '@/lib/fechas';

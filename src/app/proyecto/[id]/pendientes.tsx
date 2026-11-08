@@ -1,9 +1,9 @@
 // Lista de puntos pendientes del proyecto, con acceso directo a reinspeccionarlos.
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { colores } from '@/components/tema';
-import { Boton, Pantalla, Tarjeta, TextoSuave, estilos } from '@/components/ui';
+import { Boton, Pantalla, Tarjeta, TextoSuave, estilos, Text } from '@/components/ui';
 import { inspeccionEnCurso, listarPuntosPendientes, type Inspeccion } from '@/lib/db';
 import { fechaHora } from '@/lib/fechas';
 

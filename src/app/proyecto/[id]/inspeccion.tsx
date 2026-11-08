@@ -1,9 +1,9 @@
 // Inspección en terreno: elegir sector y punto, tomar fotos, cerrar el punto y generar el reporte.
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
 import { colores } from '@/components/tema';
-import { Boton, Campo, Etiqueta, Pantalla, Selector, Tarjeta, TextoSuave, Titulo, type Opcion } from '@/components/ui';
+import { Boton, Campo, Etiqueta, Pantalla, Selector, Tarjeta, TextoSuave, Titulo, type Opcion, Text } from '@/components/ui';
 import { borrarArchivos, tomarFotoCuadrada, uriDe } from '@/lib/archivos';
 import {
   abrirPuntoEnInspeccion,

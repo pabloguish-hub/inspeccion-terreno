@@ -1,9 +1,9 @@
 // Configuración del proyecto: agregar, editar y eliminar sectores y sus puntos de inspección.
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { colores } from '@/components/tema';
-import { Boton, EstadoChip, ModalTexto, Pantalla, Tarjeta, TextoSuave, estilos } from '@/components/ui';
+import { Boton, EstadoChip, ModalTexto, Pantalla, Tarjeta, TextoSuave, estilos, Text } from '@/components/ui';
 import { borrarArchivos } from '@/lib/archivos';
 import {
   contarHistorialPunto,
@@ -141,7 +141,7 @@ export default function Configuracion() {
 
           <Text style={[estilos.etiqueta, { marginTop: 8 }]}>Puntos de inspección ({s.puntos.length})</Text>
           {s.puntos.map((p) => (
-            <View key={p.id} style={{ borderTopWidth: 1, borderTopColor: '#D5DAE1', paddingVertical: 12 }}>
+            <View key={p.id} style={{ borderTopWidth: 1, borderTopColor: colores.borde, paddingVertical: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', color: colores.texto }}>{p.nombre}</Text>
                 <EstadoChip estado={p.estado} />

@@ -1,9 +1,9 @@
 // Detalle de un proyecto: estado, inspección, configuración, pendientes y reportes.
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
-import { colorEstado, colores } from '@/components/tema';
-import { Boton, Etiqueta, Pantalla, Tarjeta, TextoSuave, Titulo, estilos } from '@/components/ui';
+import { Alert, View } from 'react-native';
+import { colores } from '@/components/tema';
+import { Boton, Etiqueta, Pantalla, TablaDatos, Tarjeta, TextoSuave, Titulo, estilos, Text } from '@/components/ui';
 import { borrarArchivos } from '@/lib/archivos';
 import {
   ESTADOS_PROYECTO,
@@ -72,16 +72,18 @@ export default function DetalleProyecto() {
     <Pantalla>
       <Stack.Screen options={{ title: proyecto.nombre }} />
 
-      <Tarjeta>
-        <Titulo>{proyecto.nombre}</Titulo>
-        <Text style={{ fontSize: 19, color: colores.texto }}>Área: {proyecto.area}</Text>
-        <Text style={{ fontSize: 19, color: colores.texto, marginBottom: 12 }}>Código: {proyecto.codigo}</Text>
-        <Boton
-          titulo="Editar datos"
-          variante="secundario"
-          onPress={() => router.push({ pathname: '/proyecto/formulario', params: { id: proyectoId } })}
-        />
-      </Tarjeta>
+      <Titulo>{proyecto.nombre}</Titulo>
+      <TablaDatos
+        filas={[
+          ['Código', proyecto.codigo],
+          ['Área', proyecto.area],
+        ]}
+      />
+      <Boton
+        titulo="Editar datos"
+        variante="secundario"
+        onPress={() => router.push({ pathname: '/proyecto/formulario', params: { id: proyectoId } })}
+      />
 
       <Etiqueta>Estado del proyecto</Etiqueta>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
@@ -91,18 +93,12 @@ export default function DetalleProyecto() {
             <Boton
               key={e}
               titulo={e}
-              variante="secundario"
+              variante={activo ? 'primario' : 'secundario'}
               onPress={async () => {
                 await cambiarEstadoProyecto(proyectoId, e);
                 cargar();
               }}
-              colorTexto={activo ? colores.primarioTexto : colorEstado(e)}
-              estilo={{
-                flex: 1,
-                paddingHorizontal: 4,
-                borderColor: colorEstado(e),
-                backgroundColor: activo ? colorEstado(e) : colores.tarjeta,
-              }}
+              estilo={{ flex: 1, paddingHorizontal: 4 }}
             />
           );
         })}

@@ -1,9 +1,9 @@
 // Pantalla principal: lista de proyectos, filtrable por estado.
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { colores } from '@/components/tema';
-import { Boton, EstadoChip, Filtros, Pantalla, Tarjeta, TextoSuave, estilos } from '@/components/ui';
+import { Boton, EstadoChip, Filtros, Pantalla, Tarjeta, TextoSuave, Titulo, estilos, Text } from '@/components/ui';
 import { listarProyectos, type EstadoProyecto, type Proyecto } from '@/lib/db';
 
 type Filtro = 'Todos' | EstadoProyecto;
@@ -27,6 +27,7 @@ export default function Proyectos() {
 
   return (
     <Pantalla>
+      <Titulo>Proyectos</Titulo>
       <Boton titulo="+ Nuevo proyecto" onPress={() => router.push('/proyecto/formulario')} />
       <Filtros opciones={FILTROS} valor={filtro} onCambio={setFiltro} />
 
@@ -39,11 +40,10 @@ export default function Proyectos() {
           <Tarjeta key={p.id} onPress={() => router.push(`/proyecto/${p.id}`)}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
               <Text style={[estilos.opcionTexto, { flex: 1 }]}>{p.nombre}</Text>
-              <EstadoChip estado={p.estado} />
+              <EstadoChip estado={p.estado} tipo="proyecto" />
             </View>
-            <Text style={{ fontSize: 18, color: colores.texto, marginTop: 6 }}>
-              Área: {p.area} · Código: {p.codigo}
-            </Text>
+            <Text style={{ fontSize: 18, color: colores.textoSuave, marginTop: 6 }}>{p.codigo}</Text>
+            <Text style={{ fontSize: 18, color: colores.textoSuave }}>{p.area}</Text>
           </Tarjeta>
         ))
       )}

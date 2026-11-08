@@ -2,9 +2,9 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert } from 'react-native';
 import { colores } from '@/components/tema';
-import { Boton, Pantalla, Tarjeta, Titulo } from '@/components/ui';
+import { Boton, Pantalla, Tarjeta, Titulo, Text } from '@/components/ui';
 import { uriDe } from '@/lib/archivos';
 import { obtenerReporte, type Reporte } from '@/lib/db';
 import { fechaHora } from '@/lib/fechas';

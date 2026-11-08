@@ -1,32 +1,42 @@
-// Estructura general de la app: prepara la base de datos y define la barra superior.
+// Estructura general de la app: carga la fuente, prepara la base de datos y define la barra superior.
+import { Carlito_400Regular, Carlito_700Bold, useFonts } from '@expo-google-fonts/carlito';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { colores } from '@/components/tema';
+import { Text, View } from 'react-native';
+import { colores, fuentes } from '@/components/tema';
+import { LogoBarra } from '@/components/ui';
 import { iniciarBaseDatos } from '@/lib/db';
 
+// La pantalla de inicio (logo Teck sobre azul) se mantiene hasta que todo esté listo
+SplashScreen.preventAutoHideAsync();
+
 export default function Layout() {
-  const [lista, setLista] = useState(false);
+  const [fuentesListas, errorFuentes] = useFonts({ Carlito_400Regular, Carlito_700Bold });
+  const [dbLista, setDbLista] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     iniciarBaseDatos()
-      .then(() => setLista(true))
+      .then(() => setDbLista(true))
       .catch((e) => setError(String(e)));
   }, []);
 
-  if (!lista) {
+  // Si la fuente no carga, la app sigue con la fuente del sistema
+  const listo = dbLista && (fuentesListas || !!errorFuentes);
+  useEffect(() => {
+    if (listo || error) SplashScreen.hideAsync();
+  }, [listo, error]);
+
+  if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        {error ? (
-          <Text style={{ fontSize: 18, color: colores.peligro }}>Error al abrir la base de datos: {error}</Text>
-        ) : (
-          <ActivityIndicator size="large" color={colores.primario} />
-        )}
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colores.fondo }}>
+        <Text style={{ fontSize: 18, color: colores.peligro }}>Error al abrir la base de datos: {error}</Text>
       </View>
     );
   }
+  if (!listo) return null;
 
   return (
     <>
@@ -35,11 +45,12 @@ export default function Layout() {
         screenOptions={{
           headerStyle: { backgroundColor: colores.primario },
           headerTintColor: colores.primarioTexto,
-          headerTitleStyle: { fontSize: 22, fontWeight: '800' },
+          headerTitleStyle: { fontSize: 22, fontFamily: fuentes.negrita },
+          headerShadowVisible: false,
           contentStyle: { backgroundColor: colores.fondo },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Proyectos' }} />
+        <Stack.Screen name="index" options={{ title: 'Proyectos', headerTitle: () => <LogoBarra /> }} />
       </Stack>
     </>
   );

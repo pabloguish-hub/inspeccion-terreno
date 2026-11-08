@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Documentos de referencia (formatos Word de reportes): se quedan solo en este PC
+/Referencias/

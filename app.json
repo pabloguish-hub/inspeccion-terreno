@@ -1,20 +1,19 @@
 {
   "expo": {
-    "name": "Inspección Terreno",
+    "name": "Inspección ITO — Teck CDA",
     "slug": "inspeccion-terreno",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/teck/icono.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#000F3F",
+        "foregroundImage": "./assets/teck/icono-adaptable.png",
+        "monochromeImage": "./assets/teck/icono-monocromo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.pabloguish.inspeccionterreno",
@@ -26,7 +25,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/teck/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -38,6 +37,16 @@
           "photosPermission": false,
           "cameraPermission": "La app usa la cámara para tomar las fotos de la inspección.",
           "microphonePermission": false
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000F3F",
+          "image": "./assets/teck/logo-blanco.png",
+          "imageWidth": 240,
+          "resizeMode": "contain"
         }
       ]
     ],
