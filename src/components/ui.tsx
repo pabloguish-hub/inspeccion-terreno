@@ -155,6 +155,57 @@ export function TablaDatos({ filas }: { filas: [string, string][] }) {
   );
 }
 
+// ---------- Resumen de estados (tarjetas de totales y barra apilada) ----------
+
+export interface ConteoEstados {
+  cerrados: number;
+  pendientes: number;
+  anulados: number;
+  porRevisar?: number;
+}
+
+function segmentos(c: ConteoEstados) {
+  const lista: { estado: string; valor: number; texto: string }[] = [
+    { estado: 'Cerrado', valor: c.cerrados, texto: 'CERRADOS' },
+    { estado: 'Pendiente', valor: c.pendientes, texto: 'PENDIENTES' },
+    { estado: 'Anulado', valor: c.anulados, texto: 'ANULADOS' },
+  ];
+  if (c.porRevisar !== undefined) lista.push({ estado: 'Sin inspección', valor: c.porRevisar, texto: 'POR REVISAR' });
+  return lista;
+}
+
+/** Tarjetas con el total de cada estado, en sus colores. */
+export function ResumenEstados(props: ConteoEstados) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
+      {segmentos(props).map((s) => {
+        const c = colorEstado(s.estado);
+        return (
+          <View key={s.estado} style={{ flex: 1, backgroundColor: c.fondo, borderRadius: tamanos.radio, paddingVertical: 8, alignItems: 'center' }}>
+            <Text style={{ color: c.texto, fontSize: 28, fontWeight: '700' }}>{s.valor}</Text>
+            <Text style={{ color: c.texto, fontSize: 13, fontWeight: '700' }}>{s.texto}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Barra horizontal dividida según la cantidad de puntos en cada estado. */
+export function BarraEstados({ alto = 22, ...conteo }: ConteoEstados & { alto?: number }) {
+  const partes = segmentos(conteo).filter((s) => s.valor > 0);
+  if (partes.length === 0) {
+    return <View style={{ height: alto, borderRadius: tamanos.radio, backgroundColor: colores.grisClaro }} />;
+  }
+  return (
+    <View style={{ flexDirection: 'row', height: alto, borderRadius: tamanos.radio, overflow: 'hidden', borderWidth: tamanos.linea, borderColor: colores.borde }}>
+      {partes.map((s) => (
+        <View key={s.estado} style={{ flex: s.valor, backgroundColor: colorEstado(s.estado).fondo }} />
+      ))}
+    </View>
+  );
+}
+
 // ---------- Campo de texto ----------
 
 export function Campo({ etiqueta, ...props }: TextInputProps & { etiqueta: string }) {

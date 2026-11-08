@@ -55,7 +55,12 @@ export default function Layout() {
           options={{
             title: 'Proyectos',
             headerTitle: () => <LogoBarra />,
-            headerRight: () => <BotonBarra icono="cog" etiqueta="Ajustes" onPress={() => router.push('/ajustes')} />,
+            headerRight: () => (
+              <View style={{ flexDirection: 'row', gap: 4 }}>
+                <BotonBarra icono="chart-bar" etiqueta="Dashboard general" onPress={() => router.push('/dashboard')} />
+                <BotonBarra icono="cog" etiqueta="Ajustes" onPress={() => router.push('/ajustes')} />
+              </View>
+            ),
           }}
         />
       </Stack>

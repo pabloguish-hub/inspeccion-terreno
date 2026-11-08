@@ -392,6 +392,72 @@ export async function resumenPuntos(proyectoId: number) {
   return r;
 }
 
+// ---------- Dashboards ----------
+
+export interface ResumenInspeccion {
+  id: number;
+  tipo: TipoInspeccion;
+  numero: number;
+  fecha: string;
+  finalizada: string | null;
+  total: number;
+  cerrados: number;
+  pendientes: number;
+  anulados: number;
+}
+
+/** Inspecciones del proyecto por fecha, con cuántos puntos se cerraron, anularon o quedaron pendientes. */
+export function inspeccionesDelProyecto(proyectoId: number) {
+  return db.getAllAsync<ResumenInspeccion>(
+    `SELECT i.id, i.tipo, i.numero, i.fecha, i.finalizada,
+       COUNT(ip.id) AS total,
+       COALESCE(SUM(ip.estado = 'Cerrado'), 0) AS cerrados,
+       COALESCE(SUM(ip.estado = 'Pendiente'), 0) AS pendientes,
+       COALESCE(SUM(ip.estado = 'Anulado'), 0) AS anulados
+     FROM inspecciones i
+     LEFT JOIN inspeccion_puntos ip ON ip.inspeccion_id = i.id AND ip.estado IS NOT NULL
+     WHERE i.proyecto_id = ?
+     GROUP BY i.id
+     ORDER BY i.fecha DESC, i.id DESC`,
+    proyectoId
+  );
+}
+
+export interface AvanceProyecto {
+  id: number;
+  nombre: string;
+  codigo: string;
+  estado: EstadoProyecto;
+  total: number;
+  cerrados: number;
+  pendientes: number;
+  anulados: number;
+  porRevisar: number;
+}
+
+/** Puntos de cada proyecto por estado, para el dashboard general. */
+export function avanceProyectos() {
+  return db.getAllAsync<AvanceProyecto>(
+    `SELECT pr.id, pr.nombre, pr.codigo, pr.estado,
+       COUNT(p.id) AS total,
+       COALESCE(SUM(p.estado = 'Cerrado'), 0) AS cerrados,
+       COALESCE(SUM(p.estado = 'Pendiente'), 0) AS pendientes,
+       COALESCE(SUM(p.estado = 'Anulado'), 0) AS anulados,
+       COALESCE(SUM(p.estado = 'Sin inspección'), 0) AS porRevisar
+     FROM proyectos pr
+     LEFT JOIN sectores s ON s.proyecto_id = pr.id
+     LEFT JOIN puntos p ON p.sector_id = s.id
+     GROUP BY pr.id
+     ORDER BY pr.creado DESC`
+  );
+}
+
+/** % de avance: puntos cerrados sobre los que aplican (los anulados no cuentan). */
+export function porcentajeAvance(p: { total: number; cerrados: number; anulados: number }) {
+  const aplican = p.total - p.anulados;
+  return aplican > 0 ? Math.round((p.cerrados / aplican) * 100) : 0;
+}
+
 // ---------- Sectores y puntos ----------
 
 export function listarSectores(proyectoId: number) {

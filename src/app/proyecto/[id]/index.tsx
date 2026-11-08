@@ -2,8 +2,8 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { colorEstado, colores } from '@/components/tema';
-import { Boton, Etiqueta, Pantalla, TablaDatos, Tarjeta, Text, TextoSuave, Titulo, estilos } from '@/components/ui';
+import { colores } from '@/components/tema';
+import { Boton, Etiqueta, Pantalla, ResumenEstados, TablaDatos, Tarjeta, Text, TextoSuave, Titulo, estilos } from '@/components/ui';
 import { borrarArchivos } from '@/lib/archivos';
 import {
   ESTADOS_PROYECTO,
@@ -90,24 +90,8 @@ export default function DetalleProyecto() {
       />
 
       {/* Resumen de puntos con los colores de los reportes */}
-      <View style={{ flexDirection: 'row', gap: 6, marginVertical: 8 }}>
-        {(
-          [
-            ['Cerrado', resumen.cerrados, 'CERRADOS'],
-            ['Pendiente', resumen.pendientes, 'PENDIENTES'],
-            ['Anulado', resumen.anulados, 'ANULADOS'],
-            ['Sin inspección', resumen.porRevisar, 'POR REVISAR'],
-          ] as const
-        ).map(([estado, n, texto]) => {
-          const c = colorEstado(estado);
-          return (
-            <View key={estado} style={{ flex: 1, backgroundColor: c.fondo, borderRadius: 3, paddingVertical: 8, alignItems: 'center' }}>
-              <Text style={{ color: c.texto, fontSize: 26, fontWeight: '700' }}>{n}</Text>
-              <Text style={{ color: c.texto, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
-            </View>
-          );
-        })}
-      </View>
+      <View style={{ height: 8 }} />
+      <ResumenEstados {...resumen} />
 
       <View style={{ height: 12 }} />
       {enCurso ? (
@@ -146,6 +130,7 @@ export default function DetalleProyecto() {
         onPress={() => router.push(`/proyecto/${proyectoId}/pendientes`)}
         estilo={{ marginTop: 8 }}
       />
+      <Boton titulo="Dashboard del proyecto" variante="secundario" onPress={() => router.push(`/proyecto/${proyectoId}/dashboard`)} />
       <Boton titulo="Sectores y puntos" variante="secundario" onPress={() => router.push(`/proyecto/${proyectoId}/configuracion`)} />
 
       <Etiqueta>Estado del proyecto</Etiqueta>
