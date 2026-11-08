@@ -2,9 +2,9 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
-import { colores } from '@/components/tema';
-import { Boton, Pantalla, Tarjeta, Titulo, Text } from '@/components/ui';
+import { Alert, View } from 'react-native';
+import { colorEstado } from '@/components/tema';
+import { Boton, Pantalla, TablaDatos, Text, Titulo } from '@/components/ui';
 import { uriDe } from '@/lib/archivos';
 import { obtenerReporte, type Reporte } from '@/lib/db';
 import { fechaHora } from '@/lib/fechas';
@@ -35,13 +35,31 @@ export default function ReporteScreen() {
   return (
     <Pantalla>
       <Stack.Screen options={{ title: 'Reporte' }} />
-      <Tarjeta>
-        <Titulo>{reporte.nombre}</Titulo>
-        <Text style={{ fontSize: 18, color: colores.textoSuave }}>Generado el {fechaHora(reporte.fecha)}</Text>
-        <Text style={{ fontSize: 20, marginTop: 10 }}>Puntos inspeccionados: {reporte.total}</Text>
-        <Text style={{ fontSize: 20, color: colores.cerrado, fontWeight: '800' }}>Cerrados: {reporte.cerrados}</Text>
-        <Text style={{ fontSize: 20, color: colores.pendiente, fontWeight: '800' }}>Pendientes: {reporte.pendientes}</Text>
-      </Tarjeta>
+      <Titulo>{reporte.nombre}</Titulo>
+      <TablaDatos
+        filas={[
+          ['Código', reporte.codigo ?? '—'],
+          ['Generado', fechaHora(reporte.fecha)],
+          ['Puntos', String(reporte.total)],
+        ]}
+      />
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
+        {(
+          [
+            ['Cerrado', reporte.cerrados, 'CERRADOS'],
+            ['Pendiente', reporte.pendientes, 'PENDIENTES'],
+            ['Anulado', reporte.anulados, 'ANULADOS'],
+          ] as const
+        ).map(([estado, n, texto]) => {
+          const c = colorEstado(estado);
+          return (
+            <View key={estado} style={{ flex: 1, backgroundColor: c.fondo, borderRadius: 3, paddingVertical: 8, alignItems: 'center' }}>
+              <Text style={{ color: c.texto, fontSize: 26, fontWeight: '700' }}>{n}</Text>
+              <Text style={{ color: c.texto, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
+            </View>
+          );
+        })}
+      </View>
       <Boton titulo="Compartir PDF" variante="exito" onPress={compartir} estilo={{ minHeight: 90 }} />
       <Boton
         titulo="Volver al proyecto"

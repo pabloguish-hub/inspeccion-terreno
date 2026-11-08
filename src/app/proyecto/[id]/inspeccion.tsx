@@ -1,129 +1,201 @@
-// Inspección en terreno: elegir sector y punto, tomar fotos, cerrar el punto y generar el reporte.
+// Inspección y Re-Inspección en terreno:
+// datos iniciales → elegir punto → fotos → cerrar punto (estado) → finalizar → próxima visita → PDF.
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
-import { colores } from '@/components/tema';
-import { Boton, Campo, Etiqueta, Pantalla, Selector, Tarjeta, TextoSuave, Titulo, type Opcion, Text } from '@/components/ui';
-import { borrarArchivos, tomarFotoCuadrada, uriDe } from '@/lib/archivos';
+import { colorEstado, colores } from '@/components/tema';
 import {
+  Boton,
+  Campo,
+  Etiqueta,
+  ModalTexto,
+  Pantalla,
+  Selector,
+  SelectorMultiple,
+  Tarjeta,
+  Text,
+  TextoSuave,
+  Titulo,
+  type Opcion,
+} from '@/components/ui';
+import { borrarArchivos, tomarFoto, uriDe } from '@/lib/archivos';
+import {
+  ESTADOS_CIERRE,
   abrirPuntoEnInspeccion,
   agregarFoto,
+  anularPuntos,
+  cambiarPieFoto,
   cerrarPuntoEnInspeccion,
   contarPuntosCerradosEnInspeccion,
   crearInspeccion,
   eliminarFoto,
+  guardarProximaVisita,
+  hallazgoOriginal,
+  listarDocumentos,
   listarFotos,
-  obtenerProyecto,
+  listarPuntosPendientes,
+  nombreInspeccion,
+  obtenerAjustes,
+  obtenerInspeccion,
   obtenerPunto,
   puntoAbierto,
   puntosDisponibles,
+  puntosSinRevisar,
   sectoresDisponibles,
+  siguienteInspeccion,
   type EstadoCierre,
   type Foto,
+  type Inspeccion,
+  type InspeccionPunto,
+  type Punto,
 } from '@/lib/db';
-import { fecha } from '@/lib/fechas';
+import { fechaDia, hoy, leerFecha } from '@/lib/fechas';
 import { generarReporte } from '@/lib/pdf';
 
-type Paso = 'seleccion' | 'fotos' | 'cierre' | 'nombre' | 'generando';
+type Paso = 'cargando' | 'datos' | 'seleccion' | 'fotos' | 'cierre' | 'sinRevisar' | 'proxima' | 'generando';
 
 export default function InspeccionScreen() {
-  const params = useLocalSearchParams<{ id: string; inspeccionId?: string; puntoId?: string }>();
+  const params = useLocalSearchParams<{ id: string; inspeccionId?: string }>();
   const proyectoId = Number(params.id);
 
-  const [inspeccionId, setInspeccionId] = useState<number | null>(null);
-  const [paso, setPaso] = useState<Paso>('seleccion');
+  const [paso, setPaso] = useState<Paso>('cargando');
+  const [insp, setInsp] = useState<Inspeccion | null>(null);
+  const [titulo, setTitulo] = useState('Inspección');
+
+  // Datos iniciales
+  const [fechaTexto, setFechaTexto] = useState(fechaDia(hoy()));
+  const [sectorArea, setSectorArea] = useState('');
+  const [personal, setPersonal] = useState('');
+
+  // Selección del punto
   const [sectores, setSectores] = useState<Opcion<number>[]>([]);
   const [puntos, setPuntos] = useState<Opcion<number>[]>([]);
   const [sectorId, setSectorId] = useState<number | null>(null);
   const [puntoId, setPuntoId] = useState<number | null>(null);
-  const [ipId, setIpId] = useState<number | null>(null); // punto abierto en esta inspección
+  const [punto, setPunto] = useState<Awaited<ReturnType<typeof obtenerPunto>>>(null);
+  const [hallazgo, setHallazgo] = useState<InspeccionPunto | null>(null);
+  const [recarga, setRecarga] = useState(0);
+  const [cerrados, setCerrados] = useState(0);
+
+  // Punto abierto: fotos y cierre
+  const [ipId, setIpId] = useState<number | null>(null);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [procesandoFoto, setProcesandoFoto] = useState(false);
+  const [fotoPie, setFotoPie] = useState<Foto | null>(null);
   const [observacion, setObservacion] = useState('');
   const [estado, setEstado] = useState<EstadoCierre | null>(null);
+  const [documentos, setDocumentos] = useState<Opcion<number>[]>([]);
+  const [docsElegidos, setDocsElegidos] = useState<number[]>([]);
+  const [detalle, setDetalle] = useState('');
   const [accion, setAccion] = useState<'continuar' | 'finalizar'>('continuar');
-  const [cerrados, setCerrados] = useState(0);
-  const [nombreReporte, setNombreReporte] = useState('');
+
+  // Finalización
+  const [sinRevisar, setSinRevisar] = useState<Punto[]>([]);
+  const [motivo, setMotivo] = useState('');
+  const [proxFecha, setProxFecha] = useState('');
+  const [proxResponsable, setProxResponsable] = useState('');
+  const [pendientesFinal, setPendientesFinal] = useState<number[]>([]);
+
+  const esRI = insp?.tipo === 'Re-Inspección';
   const iniciado = useRef(false);
 
-  // Al entrar: crear la inspección (o retomar la que estaba en curso)
+  // ---------- Al entrar: retomar la inspección en curso o pedir los datos de una nueva ----------
   useEffect(() => {
     if (iniciado.current) return;
     iniciado.current = true;
     (async () => {
-      let idInsp = params.inspeccionId ? Number(params.inspeccionId) : null;
-      if (!idInsp) idInsp = await crearInspeccion(proyectoId);
-      setInspeccionId(idInsp);
-      setCerrados(await contarPuntosCerradosEnInspeccion(idInsp));
-
-      const abierto = await puntoAbierto(idInsp);
+      setDocumentos(
+        (await listarDocumentos(proyectoId)).map((d) => ({
+          valor: d.id,
+          texto: `${d.codigo}${d.rev ? ` Rev. ${d.rev}` : ''}`,
+          detalle: d.titulo,
+        }))
+      );
+      if (!params.inspeccionId) {
+        const sig = await siguienteInspeccion(proyectoId);
+        setTitulo(nombreInspeccion(sig.tipo, sig.numero));
+        const a = await obtenerAjustes();
+        if (a.inspector_nombre) setPersonal(`${a.inspector_nombre} — ITO Teck`);
+        setPaso('datos');
+        return;
+      }
+      const i = await obtenerInspeccion(Number(params.inspeccionId));
+      if (!i) return router.back();
+      setInsp(i);
+      setTitulo(nombreInspeccion(i.tipo, i.numero));
+      setCerrados(await contarPuntosCerradosEnInspeccion(i.id));
+      const abierto = await puntoAbierto(i.id);
       if (abierto) {
-        // Había un punto a medio hacer (por ejemplo, se cerró la app): lo retomamos
+        // Había un punto a medio hacer (por ejemplo, se cerró la app): se retoma
         const p = await obtenerPunto(abierto.punto_id);
         setSectorId(p?.sector_id ?? null);
         setPuntoId(abierto.punto_id);
         setIpId(abierto.id);
         setFotos(await listarFotos(abierto.id));
         setPaso('fotos');
-      } else if (params.puntoId) {
-        // Venimos desde "Puntos pendientes" para reinspeccionar un punto
-        const p = await obtenerPunto(Number(params.puntoId));
-        const disponible = p && (await puntosDisponibles(p.sector_id, idInsp)).some((d) => d.id === p.id);
-        if (p && disponible) {
-          setSectorId(p.sector_id);
-          setPuntoId(p.id);
-        }
+      } else {
+        setPaso('seleccion');
       }
     })();
-  }, [params.inspeccionId, params.puntoId, proyectoId]);
+  }, [params.inspeccionId, proyectoId]);
 
-  // Listas de los menús desplegables; se recargan al cambiar "recarga"
-  const [recarga, setRecarga] = useState(0);
+  // ---------- Listas de los menús (se recargan al cambiar "recarga") ----------
   useEffect(() => {
-    if (!inspeccionId) return;
-    sectoresDisponibles(proyectoId, inspeccionId).then((lista) =>
+    if (!insp) return;
+    sectoresDisponibles(proyectoId, insp.id).then((lista) =>
       setSectores(lista.map((s) => ({ valor: s.id, texto: s.nombre })))
     );
-  }, [inspeccionId, proyectoId, recarga]);
+  }, [insp, proyectoId, recarga]);
 
   useEffect(() => {
-    if (!inspeccionId || !sectorId) return;
-    puntosDisponibles(sectorId, inspeccionId).then((lista) =>
+    if (!insp || !sectorId) return;
+    puntosDisponibles(sectorId, insp.id).then((lista) =>
       setPuntos(
         lista.map((p) => ({
           valor: p.id,
-          texto: p.nombre,
-          detalle: p.estado === 'Pendiente' ? '⚠ Pendiente: reinspección' : undefined,
-          color: colores.pendiente,
+          texto: `N° ${p.numero} — ${p.nombre}`,
+          detalle: p.estado === 'Pendiente' ? 'Pendiente' : insp.tipo === 'Re-Inspección' ? 'Punto nuevo' : undefined,
+          color: p.estado === 'Pendiente' ? colores.pendiente : colores.textoSuave,
         }))
       )
     );
-  }, [inspeccionId, sectorId, recarga]);
+  }, [insp, sectorId, recarga]);
 
-  // Nombres del punto actual (se leen aparte porque al abrirlo deja de estar en la lista)
-  const [sectorNombre, setSectorNombre] = useState('');
-  const [puntoNombre, setPuntoNombre] = useState('');
+  // Datos del punto actual y su hallazgo original (en re-inspecciones)
   useEffect(() => {
-    if (!puntoId) return;
-    obtenerPunto(puntoId).then((p) => {
-      setSectorNombre(p?.sector_nombre ?? '');
-      setPuntoNombre(p?.nombre ?? '');
-    });
-  }, [puntoId]);
+    if (!puntoId || !insp) return;
+    obtenerPunto(puntoId).then(setPunto);
+    hallazgoOriginal(puntoId, insp.id).then(setHallazgo);
+  }, [puntoId, insp]);
 
-  async function tomarFoto() {
-    if (!inspeccionId || !puntoId) return;
+  // ---------- Acciones ----------
+
+  async function comenzar() {
+    const fecha = leerFecha(fechaTexto);
+    if (!fecha) return Alert.alert('Fecha no válida', 'Escribe la fecha como DD-MM-AAAA, por ejemplo 07-11-2026.');
+    const id = await crearInspeccion(proyectoId, { fecha, sector_area: sectorArea.trim(), personal: personal.trim() });
+    setInsp(await obtenerInspeccion(id));
+    setPaso('seleccion');
+  }
+
+  async function abrirPunto(): Promise<number | null> {
+    if (!insp || !puntoId) return null;
+    if (ipId) return ipId;
+    const id = await abrirPuntoEnInspeccion(insp.id, puntoId);
+    setIpId(id);
+    return id;
+  }
+
+  async function agregarFotoNueva() {
+    if (!insp || !puntoId) return;
     setProcesandoFoto(true);
     try {
-      const archivo = await tomarFotoCuadrada();
+      const archivo = await tomarFoto();
       if (!archivo) return; // el usuario canceló la cámara
-      let idPunto = ipId;
-      if (!idPunto) {
-        idPunto = await abrirPuntoEnInspeccion(inspeccionId, puntoId);
-        setIpId(idPunto);
-      }
-      await agregarFoto(idPunto, archivo);
-      setFotos(await listarFotos(idPunto));
+      const id = await abrirPunto();
+      if (!id) return;
+      await agregarFoto(id, archivo, punto?.nombre ?? '');
+      setFotos(await listarFotos(id));
       setPaso('fotos');
     } catch (e) {
       Alert.alert('No se pudo tomar la foto', e instanceof Error ? e.message : String(e));
@@ -132,17 +204,23 @@ export default function InspeccionScreen() {
     }
   }
 
-  function quitarFoto(f: Foto) {
-    Alert.alert('Quitar foto', '¿Quitar esta foto del punto?', [
+  async function sinFoto() {
+    await abrirPunto();
+    irACierre('continuar');
+  }
+
+  function opcionesFoto(f: Foto) {
+    Alert.alert('Foto', f.pie || 'Sin pie de foto', [
       { text: 'Cancelar', style: 'cancel' },
       {
-        text: 'Quitar',
+        text: 'Quitar foto',
         style: 'destructive',
         onPress: async () => {
           borrarArchivos([await eliminarFoto(f.id)]);
           if (ipId) setFotos(await listarFotos(ipId));
         },
       },
+      { text: 'Editar pie', onPress: () => setFotoPie(f) },
     ]);
   }
 
@@ -150,141 +228,284 @@ export default function InspeccionScreen() {
     setAccion(a);
     setObservacion('');
     setEstado(null);
+    setDocsElegidos([]);
+    setDetalle('');
     setPaso('cierre');
-  }
-
-  async function sugerirNombre() {
-    const p = await obtenerProyecto(proyectoId);
-    setNombreReporte(`Inspección ${p?.codigo ?? ''} ${fecha(new Date().toISOString())}`.trim());
-    setPaso('nombre');
   }
 
   async function guardarCierre() {
     if (!ipId || !estado) return;
-    await cerrarPuntoEnInspeccion(ipId, observacion.trim(), estado);
+    await cerrarPuntoEnInspeccion(ipId, { observacion: observacion.trim(), estado, documentos: docsElegidos, detalle: detalle.trim() });
     setCerrados((n) => n + 1);
     // El sector se mantiene y el punto se borra
     setPuntoId(null);
+    setPunto(null);
     setIpId(null);
     setFotos([]);
-    if (accion === 'continuar') {
-      setPaso('seleccion');
-      // Si el sector ya no tiene puntos disponibles, se deja sin elegir
-      if (inspeccionId) {
-        const quedan = await sectoresDisponibles(proyectoId, inspeccionId);
-        if (!quedan.some((s) => s.id === sectorId)) setSectorId(null);
-      }
-      setRecarga((n) => n + 1);
-    } else {
-      await sugerirNombre();
+    if (insp) {
+      const quedan = await sectoresDisponibles(proyectoId, insp.id);
+      if (!quedan.some((s) => s.id === sectorId)) setSectorId(null);
     }
+    setRecarga((n) => n + 1);
+    if (accion === 'continuar') setPaso('seleccion');
+    else await finalizar();
   }
 
-  async function generar() {
-    if (!inspeccionId) return;
+  /** Revisa qué falta antes de generar el reporte. */
+  async function finalizar() {
+    if (!insp) return;
+    const faltan = await puntosSinRevisar(proyectoId, insp.id);
+    if (faltan.length && !esRI) {
+      // En la primera inspección todos los puntos deben quedar revisados o anulados
+      setSinRevisar(faltan);
+      setMotivo('');
+      setPaso('sinRevisar');
+      return;
+    }
+    if (faltan.length && esRI) {
+      Alert.alert(
+        'Puntos sin revisar',
+        `${faltan.length} punto(s) no se revisaron en esta re-inspección y quedan para la siguiente.`,
+        [
+          { text: 'Volver', style: 'cancel', onPress: () => setPaso('seleccion') },
+          { text: 'Finalizar igual', onPress: () => pedirProximaVisita() },
+        ]
+      );
+      return;
+    }
+    await pedirProximaVisita();
+  }
+
+  async function anularSinRevisar() {
+    if (!insp) return;
+    await anularPuntos(insp.id, sinRevisar.map((p) => p.id), motivo.trim());
+    setCerrados((n) => n + sinRevisar.length);
+    setRecarga((n) => n + 1);
+    await pedirProximaVisita();
+  }
+
+  async function pedirProximaVisita() {
+    const quedan = await listarPuntosPendientes(proyectoId);
+    if (quedan.length === 0) return generar(null, null);
+    setPendientesFinal(quedan.map((p) => p.numero));
+    setPaso('proxima');
+  }
+
+  async function confirmarProxima() {
+    const fecha = leerFecha(proxFecha);
+    if (!fecha) return Alert.alert('Fecha no válida', 'Escribe la fecha como DD-MM-AAAA, por ejemplo 14-11-2026.');
+    await generar(fecha, proxResponsable.trim());
+  }
+
+  async function generar(fecha: string | null, responsable: string | null) {
+    if (!insp) return;
     setPaso('generando');
     try {
-      const reporteId = await generarReporte(inspeccionId, nombreReporte.trim());
+      await guardarProximaVisita(insp.id, fecha, responsable);
+      const reporteId = await generarReporte(insp.id);
       router.replace(`/reporte/${reporteId}`);
     } catch (e) {
-      setPaso('nombre');
+      setPaso('seleccion');
       Alert.alert('No se pudo generar el PDF', e instanceof Error ? e.message : String(e));
     }
   }
 
+  // ---------- Pantallas de cada paso ----------
 
-  // ---------- Paso: generando PDF ----------
+  const cabeceraPunto = punto ? (
+    <View style={{ borderLeftWidth: 4, borderLeftColor: colores.primario, backgroundColor: colores.grisClaro, padding: 12, marginBottom: 14 }}>
+      <Text style={{ fontSize: 17, color: colores.textoSuave }}>
+        N° {punto.numero} · Sector {punto.sector_nombre}
+      </Text>
+      <Text style={{ fontSize: 22, fontWeight: '700', color: colores.primario }}>{punto.nombre}</Text>
+    </View>
+  ) : null;
+
+  if (paso === 'cargando') return <Pantalla>{null}</Pantalla>;
+
   if (paso === 'generando') {
     return (
       <Pantalla scroll={false}>
         <Stack.Screen options={{ title: 'Generando reporte', headerBackVisible: false }} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colores.primario} />
-          <Titulo>Generando PDF…</Titulo>
+          <Text style={{ fontSize: 24, fontWeight: '700', color: colores.primario, marginTop: 12 }}>Generando PDF…</Text>
           <TextoSuave>Esto puede tardar unos segundos si hay muchas fotos.</TextoSuave>
         </View>
       </Pantalla>
     );
   }
 
-  // ---------- Paso: nombre del reporte ----------
-  if (paso === 'nombre') {
+  if (paso === 'datos') {
     return (
       <Pantalla>
-        <Stack.Screen options={{ title: 'Finalizar inspección' }} />
-        <Titulo>Nombre del reporte</Titulo>
-        <Campo etiqueta="Nombre" value={nombreReporte} onChangeText={setNombreReporte} autoFocus />
-        <Boton titulo="Generar PDF" variante="exito" deshabilitado={!nombreReporte.trim()} onPress={generar} />
+        <Stack.Screen options={{ title: titulo }} />
+        <Titulo>Antecedentes de la inspección</Titulo>
+        <Campo etiqueta="Fecha (DD-MM-AAAA)" value={fechaTexto} onChangeText={setFechaTexto} keyboardType="numbers-and-punctuation" />
+        <Campo etiqueta="Sector / área" value={sectorArea} onChangeText={setSectorArea} placeholder="Sector planta — Eje 8" />
+        <Campo
+          etiqueta="Personal presente"
+          value={personal}
+          onChangeText={setPersonal}
+          multiline
+          placeholder="Nombre — Supervisor contratista; Nombre — ITO Teck"
+        />
+        <Boton titulo={`Comenzar ${titulo}`} onPress={comenzar} deshabilitado={!fechaTexto.trim()} />
+        <Boton titulo="Cancelar" variante="secundario" onPress={() => router.back()} />
+      </Pantalla>
+    );
+  }
+
+  if (paso === 'sinRevisar') {
+    return (
+      <Pantalla>
+        <Stack.Screen options={{ title: 'Puntos sin revisar' }} />
+        <Tarjeta>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: colores.pendiente }}>
+            ⚠ Quedan {sinRevisar.length} punto(s) sin revisar
+          </Text>
+          <TextoSuave>
+            La primera inspección debe revisar todos los puntos. Vuelve a revisarlos o anúlalos indicando el motivo.
+          </TextoSuave>
+        </Tarjeta>
+        {sinRevisar.map((p) => (
+          <Text key={p.id} style={{ fontSize: 19, marginBottom: 6 }}>
+            N° {p.numero} — {p.nombre}
+          </Text>
+        ))}
+        <View style={{ height: 12 }} />
+        <Boton titulo="Volver a revisarlos" onPress={() => setPaso('seleccion')} />
+        <View style={{ height: 20 }} />
+        <Campo
+          etiqueta="Motivo de anulación"
+          value={motivo}
+          onChangeText={setMotivo}
+          multiline
+          placeholder="Ej: soporte eliminado por cambio de ingeniería"
+        />
+        <Boton
+          titulo={`Anular ${sinRevisar.length} punto(s) y finalizar`}
+          variante="secundario"
+          colorTexto={colores.primario}
+          estilo={{ borderColor: colores.anulado, backgroundColor: colores.anulado }}
+          deshabilitado={!motivo.trim()}
+          onPress={anularSinRevisar}
+        />
+        {!motivo.trim() ? <TextoSuave>Para anular debes escribir el motivo.</TextoSuave> : null}
+      </Pantalla>
+    );
+  }
+
+  if (paso === 'proxima') {
+    return (
+      <Pantalla>
+        <Stack.Screen options={{ title: 'Próxima visita' }} />
+        <Titulo>Próxima visita</Titulo>
+        <TextoSuave>
+          Quedan puntos pendientes (N° {pendientesFinal.join(', ')}). Indica cuándo se verificará su cierre.
+        </TextoSuave>
+        <View style={{ height: 12 }} />
+        <Campo etiqueta="Fecha nueva visita (DD-MM-AAAA)" value={proxFecha} onChangeText={setProxFecha}
+          keyboardType="numbers-and-punctuation" placeholder="14-11-2026" />
+        <Campo etiqueta="Responsable del cierre" value={proxResponsable} onChangeText={setProxResponsable}
+          placeholder="Contratista — Supervisor / QA-QC" />
+        <Boton titulo="Generar PDF" variante="exito" onPress={confirmarProxima}
+          deshabilitado={!proxFecha.trim() || !proxResponsable.trim()} />
         <Boton titulo="Volver a la inspección" variante="secundario" onPress={() => setPaso('seleccion')} />
       </Pantalla>
     );
   }
 
-  // ---------- Paso: cerrar punto (observación y estado) ----------
   if (paso === 'cierre') {
+    const anulado = estado === 'Anulado';
+    const falta = !estado || (anulado && !observacion.trim());
     return (
       <Pantalla>
         <Stack.Screen options={{ title: 'Cerrar punto' }} />
-        <Tarjeta>
-          <Text style={{ fontSize: 18 }}>Sector: {sectorNombre}</Text>
-          <Text style={{ fontSize: 22, fontWeight: '800' }}>Punto: {puntoNombre}</Text>
-        </Tarjeta>
+        {cabeceraPunto}
+        {esRI ? (
+          <Tarjeta>
+            <Etiqueta>Hallazgo original</Etiqueta>
+            <Text style={{ fontSize: 18 }}>
+              {hallazgo ? hallazgo.observacion || 'Sin observación' : 'Punto nuevo: no tiene hallazgo original.'}
+            </Text>
+          </Tarjeta>
+        ) : null}
         <Campo
-          etiqueta="Observación"
+          etiqueta={anulado ? 'Motivo de anulación (obligatorio)' : esRI ? 'Verificación' : 'Observación'}
           value={observacion}
           onChangeText={setObservacion}
           multiline
-          placeholder="Escribe lo observado en este punto"
+          placeholder={anulado ? 'Por qué el punto deja de aplicar' : 'Lo observado en este punto'}
         />
         <Etiqueta>Estado del punto</Etiqueta>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Boton
-            titulo={estado === 'Cerrado' ? '✓ Cerrado' : 'Cerrado'}
-            variante={estado === 'Cerrado' ? 'exito' : 'secundario'}
-            colorTexto={estado === 'Cerrado' ? undefined : colores.cerrado}
-            estilo={{ flex: 1, borderColor: colores.cerrado, minHeight: 80 }}
-            onPress={() => setEstado('Cerrado')}
-          />
-          <Boton
-            titulo={estado === 'Pendiente' ? '✓ Pendiente' : 'Pendiente'}
-            variante={estado === 'Pendiente' ? 'alerta' : 'secundario'}
-            colorTexto={estado === 'Pendiente' ? undefined : colores.pendiente}
-            estilo={{ flex: 1, borderColor: colores.pendiente, minHeight: 80 }}
-            onPress={() => setEstado('Pendiente')}
-          />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {ESTADOS_CIERRE.map((e) => {
+            const c = colorEstado(e);
+            const activo = estado === e;
+            return (
+              <Boton
+                key={e}
+                titulo={(activo ? '✓ ' : '') + e.toUpperCase()}
+                variante="secundario"
+                colorTexto={activo ? c.texto : e === 'Anulado' ? colores.primario : c.fondo}
+                estilo={{ flex: 1, minHeight: 80, paddingHorizontal: 2, borderColor: c.fondo, backgroundColor: activo ? c.fondo : colores.tarjeta }}
+                onPress={() => setEstado(e)}
+              />
+            );
+          })}
         </View>
+        {estado === 'Pendiente' ? (
+          <View style={{ marginTop: 8 }}>
+            <SelectorMultiple
+              etiqueta="Documento de referencia"
+              opciones={documentos}
+              valores={docsElegidos}
+              onCambio={setDocsElegidos}
+              placeholder="Toca para elegir (opcional)"
+              vacio="El proyecto no tiene documentos de referencia. Agrégalos en «Editar datos del proyecto»."
+            />
+            <Campo etiqueta="Detalle (opcional)" value={detalle} onChangeText={setDetalle}
+              placeholder="Tabla 341.3.2 — Criterios de aceptación" />
+          </View>
+        ) : null}
         <View style={{ height: 12 }} />
-        <Boton
-          titulo={accion === 'continuar' ? 'Guardar y continuar' : 'Guardar y finalizar'}
-          deshabilitado={!estado}
-          onPress={guardarCierre}
-        />
-        {!estado ? <TextoSuave>Elige Cerrado o Pendiente para poder guardar.</TextoSuave> : null}
+        <Boton titulo={accion === 'continuar' ? 'Guardar y continuar' : 'Guardar y finalizar'} deshabilitado={falta} onPress={guardarCierre} />
+        {!estado ? <TextoSuave>Elige el estado para poder guardar.</TextoSuave> : null}
+        {anulado && !observacion.trim() ? <TextoSuave>Escribe el motivo de anulación.</TextoSuave> : null}
         <Boton titulo="Volver a las fotos" variante="secundario" onPress={() => setPaso('fotos')} estilo={{ marginTop: 8 }} />
       </Pantalla>
     );
   }
 
-  // ---------- Paso: fotos del punto ----------
   if (paso === 'fotos') {
     return (
       <Pantalla>
         <Stack.Screen options={{ title: 'Fotos del punto' }} />
-        <Tarjeta>
-          <Text style={{ fontSize: 18 }}>Sector: {sectorNombre}</Text>
-          <Text style={{ fontSize: 22, fontWeight: '800' }}>Punto: {puntoNombre}</Text>
-          <TextoSuave>{fotos.length} foto(s). Toca una foto para quitarla.</TextoSuave>
-        </Tarjeta>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-          {fotos.map((f) => (
-            <Pressable key={f.id} onPress={() => quitarFoto(f)} style={{ width: '31%', aspectRatio: 1 }}>
-              <Image source={{ uri: uriDe(f.archivo) }} style={{ width: '100%', height: '100%', borderRadius: 8 }} />
-            </Pressable>
-          ))}
-        </View>
-        <Boton titulo="📷 Agregar foto" onPress={tomarFoto} cargando={procesandoFoto} />
+        {cabeceraPunto}
+        <TextoSuave>{fotos.length} foto(s). Toca una foto para editar su pie o quitarla.</TextoSuave>
+        <View style={{ height: 8 }} />
+        {fotos.map((f) => (
+          <Pressable key={f.id} onPress={() => opcionesFoto(f)} style={{ marginBottom: 12 }}>
+            <Image source={{ uri: uriDe(f.archivo) }} style={{ width: '100%', aspectRatio: 3 / 2, borderRadius: 3, backgroundColor: colores.grisClaro }} resizeMode="contain" />
+            <Text style={{ fontSize: 16, color: colores.textoSuave, textAlign: 'center', marginTop: 4 }}>{f.pie || 'Sin pie de foto'}</Text>
+          </Pressable>
+        ))}
+        <Boton titulo="📷 Agregar foto" onPress={agregarFotoNueva} cargando={procesandoFoto} />
         <Boton titulo="Continuar" variante="exito" onPress={() => irACierre('continuar')} />
-        <Boton titulo="Finalizar" variante="alerta" onPress={() => irACierre('finalizar')} />
+        <Boton titulo="Finalizar" variante="secundario" onPress={() => irACierre('finalizar')} />
+        <ModalTexto
+          visible={!!fotoPie}
+          titulo="Pie de foto"
+          etiqueta="Texto bajo la foto en el reporte"
+          valorInicial={fotoPie?.pie ?? ''}
+          onAceptar={async (t) => {
+            if (fotoPie) await cambiarPieFoto(fotoPie.id, t);
+            setFotoPie(null);
+            if (ipId) setFotos(await listarFotos(ipId));
+          }}
+          onCancelar={() => setFotoPie(null)}
+        />
       </Pantalla>
     );
   }
@@ -292,8 +513,9 @@ export default function InspeccionScreen() {
   // ---------- Paso: selección de sector y punto ----------
   return (
     <Pantalla>
-      <Stack.Screen options={{ title: 'Inspección' }} />
-      <TextoSuave>Puntos cerrados en esta inspección: {cerrados}</TextoSuave>
+      <Stack.Screen options={{ title: titulo }} />
+      <TextoSuave>Puntos registrados en esta inspección: {cerrados}</TextoSuave>
+      {esRI ? <TextoSuave>Solo se muestran los puntos pendientes y los puntos nuevos.</TextoSuave> : null}
       <View style={{ height: 12 }} />
       <Selector
         etiqueta="Sector"
@@ -303,7 +525,7 @@ export default function InspeccionScreen() {
           setSectorId(v);
           setPuntoId(null);
         }}
-        vacio="No quedan sectores con puntos por inspeccionar."
+        vacio="No quedan puntos por revisar."
       />
       <Selector
         etiqueta="Punto de inspección"
@@ -313,19 +535,10 @@ export default function InspeccionScreen() {
         placeholder={sectorId ? 'Toca para elegir' : 'Primero elige un sector'}
         vacio="No quedan puntos disponibles en este sector."
       />
-      <Boton
-        titulo="📷 Tomar foto"
-        deshabilitado={!puntoId}
-        cargando={procesandoFoto}
-        onPress={tomarFoto}
-        estilo={{ minHeight: 90 }}
-      />
-      {sectores.length === 0 && inspeccionId ? (
-        <TextoSuave>Ya no quedan puntos por inspeccionar en este proyecto.</TextoSuave>
-      ) : null}
-      {cerrados > 0 ? (
-        <Boton titulo="Finalizar inspección" variante="alerta" onPress={sugerirNombre} estilo={{ marginTop: 24 }} />
-      ) : null}
+      <Boton titulo="📷 Tomar foto" deshabilitado={!puntoId} cargando={procesandoFoto} onPress={agregarFotoNueva} estilo={{ minHeight: 90 }} />
+      <Boton titulo="Registrar sin foto" variante="secundario" deshabilitado={!puntoId} onPress={sinFoto} />
+      {sectores.length === 0 ? <TextoSuave>Ya no quedan puntos por revisar en este proyecto.</TextoSuave> : null}
+      {cerrados > 0 ? <Boton titulo="Finalizar inspección" variante="exito" onPress={finalizar} estilo={{ marginTop: 24 }} /> : null}
     </Pantalla>
   );
 }

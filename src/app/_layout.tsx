@@ -1,12 +1,12 @@
 // Estructura general de la app: carga la fuente, prepara la base de datos y define la barra superior.
 import { Carlito_400Regular, Carlito_700Bold, useFonts } from '@expo-google-fonts/carlito';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { colores, fuentes } from '@/components/tema';
-import { LogoBarra } from '@/components/ui';
+import { BotonBarra, LogoBarra } from '@/components/ui';
 import { iniciarBaseDatos } from '@/lib/db';
 
 // La pantalla de inicio (logo Teck sobre azul) se mantiene hasta que todo esté listo
@@ -50,7 +50,14 @@ export default function Layout() {
           contentStyle: { backgroundColor: colores.fondo },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Proyectos', headerTitle: () => <LogoBarra /> }} />
+        <Stack.Screen
+          name="index"
+          options={{
+            title: 'Proyectos',
+            headerTitle: () => <LogoBarra />,
+            headerRight: () => <BotonBarra icono="cog" etiqueta="Ajustes" onPress={() => router.push('/ajustes')} />,
+          }}
+        />
       </Stack>
     </>
   );

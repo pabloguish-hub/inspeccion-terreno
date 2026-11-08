@@ -1,14 +1,22 @@
-// Historial de un punto: todas sus inspecciones con fecha, fotos, observación y estado.
+// Historial de un punto: todas sus revisiones con fecha, fotos, observación, estado y documentos.
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, View } from 'react-native';
 import { colores } from '@/components/tema';
-import { EstadoChip, Pantalla, Tarjeta, TextoSuave, Titulo, Text } from '@/components/ui';
+import { EstadoChip, Pantalla, Tarjeta, Text, TextoSuave, Titulo } from '@/components/ui';
 import { uriDe } from '@/lib/archivos';
-import { historialPunto, listarFotos, obtenerPunto, type Foto, type InspeccionPunto } from '@/lib/db';
+import {
+  documentosDePunto,
+  historialPunto,
+  listarFotos,
+  nombreInspeccion,
+  obtenerPunto,
+  type Documento,
+  type Foto,
+} from '@/lib/db';
 import { fechaHora } from '@/lib/fechas';
 
-type Registro = InspeccionPunto & { fotos: Foto[] };
+type Registro = Awaited<ReturnType<typeof historialPunto>>[number] & { fotos: Foto[]; documentos: Documento[] };
 
 export default function HistorialPunto() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,9 +29,11 @@ export default function HistorialPunto() {
       (async () => {
         setPunto(await obtenerPunto(puntoId));
         const lista = await historialPunto(puntoId);
-        const conFotos: Registro[] = [];
-        for (const r of lista) conFotos.push({ ...r, fotos: await listarFotos(r.id) });
-        setRegistros(conFotos);
+        const completos: Registro[] = [];
+        for (const r of lista) {
+          completos.push({ ...r, fotos: await listarFotos(r.id), documentos: await documentosDePunto(r.id) });
+        }
+        setRegistros(completos);
       })();
     }, [puntoId])
   );
@@ -32,28 +42,41 @@ export default function HistorialPunto() {
     <Pantalla>
       <Stack.Screen options={{ title: 'Historial del punto' }} />
       {punto ? (
-        <Tarjeta>
-          <Text style={{ fontSize: 17, color: colores.textoSuave }}>Sector: {punto.sector_nombre}</Text>
+        <>
+          <Text style={{ fontSize: 17, color: colores.textoSuave }}>
+            N° {punto.numero} · Sector {punto.sector_nombre}
+          </Text>
           <Titulo>{punto.nombre}</Titulo>
-          <EstadoChip estado={punto.estado} />
-        </Tarjeta>
+          <EstadoChip estado={punto.estado === 'Sin inspección' ? 'Por revisar' : punto.estado} />
+          <View style={{ height: 16 }} />
+        </>
       ) : null}
 
-      {registros.length === 0 ? <TextoSuave>Este punto todavía no tiene inspecciones.</TextoSuave> : null}
+      {registros.length === 0 ? <TextoSuave>Este punto todavía no tiene revisiones.</TextoSuave> : null}
 
-      {registros.map((r, i) => (
+      {registros.map((r) => (
         <Tarjeta key={r.id}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ fontSize: 19, fontWeight: '800' }}>{fechaHora(r.fecha)}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <Text style={{ fontSize: 19, fontWeight: '700', color: colores.primario }}>{nombreInspeccion(r.tipo, r.numero)}</Text>
             <EstadoChip estado={r.estado} />
           </View>
-          {i < registros.length - 1 ? <TextoSuave>Reinspección</TextoSuave> : null}
-          <Text style={{ fontSize: 18, marginVertical: 6 }}>{r.observacion || 'Sin observación'}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {r.fotos.map((f) => (
-              <Image key={f.id} source={{ uri: uriDe(f.archivo) }} style={{ width: '31%', aspectRatio: 1, borderRadius: 6 }} />
-            ))}
-          </View>
+          <TextoSuave>{fechaHora(r.fecha)}</TextoSuave>
+          <Text style={{ fontSize: 18, marginVertical: 6 }}>
+            {r.estado === 'Anulado' ? 'Motivo: ' : ''}
+            {r.observacion || 'Sin observación'}
+          </Text>
+          {r.documentos.length || r.doc_detalle ? (
+            <Text style={{ fontSize: 16, fontWeight: '700', marginBottom: 6 }}>
+              Documento de referencia: {r.documentos.map((d) => `${d.codigo}${d.rev ? ` Rev. ${d.rev}` : ''}`).join(' / ')}
+              {r.doc_detalle ? `${r.documentos.length ? ', ' : ''}${r.doc_detalle}` : ''}
+            </Text>
+          ) : null}
+          {r.fotos.map((f) => (
+            <View key={f.id} style={{ marginBottom: 8 }}>
+              <Image source={{ uri: uriDe(f.archivo) }} style={{ width: '100%', aspectRatio: 3 / 2, borderRadius: 3, backgroundColor: colores.grisClaro }} resizeMode="contain" />
+              {f.pie ? <Text style={{ fontSize: 15, color: colores.textoSuave, textAlign: 'center' }}>{f.pie}</Text> : null}
+            </View>
+          ))}
         </Tarjeta>
       ))}
     </Pantalla>

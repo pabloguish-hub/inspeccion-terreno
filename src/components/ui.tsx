@@ -1,5 +1,6 @@
 // Componentes visuales reutilizables: botones grandes, menús desplegables, etc.
 // Todo el estilo viene de tema.ts; las pantallas no deben definir colores propios.
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -312,6 +313,161 @@ function CajaTexto(props: {
   );
 }
 
+// ---------- Menú desplegable de selección múltiple ----------
+
+export function SelectorMultiple<T>({
+  etiqueta,
+  opciones,
+  valores,
+  onCambio,
+  placeholder = 'Toca para elegir',
+  vacio = 'No hay opciones disponibles',
+}: {
+  etiqueta: string;
+  opciones: Opcion<T>[];
+  valores: T[];
+  onCambio: (v: T[]) => void;
+  placeholder?: string;
+  vacio?: string;
+}) {
+  const [abierto, setAbierto] = useState(false);
+  const elegidas = opciones.filter((o) => valores.includes(o.valor));
+  const alternar = (v: T) => onCambio(valores.includes(v) ? valores.filter((x) => x !== v) : [...valores, v]);
+  return (
+    <View style={{ marginBottom: tamanos.espacio }}>
+      <Etiqueta>{etiqueta}</Etiqueta>
+      <Pressable onPress={() => setAbierto(true)} style={({ pressed }) => [estilos.selector, pressed && { opacity: 0.7 }]}>
+        <Text style={[estilos.selectorTexto, !elegidas.length && { color: colores.textoSuave }]}>
+          {elegidas.length ? elegidas.map((o) => o.texto).join('\n') : placeholder}
+        </Text>
+        <Text style={estilos.selectorFlecha}>▼</Text>
+      </Pressable>
+
+      <Modal visible={abierto} animationType="slide" onRequestClose={() => setAbierto(false)}>
+        <SafeAreaView style={[estilos.pantalla, { padding: tamanos.espacio }]}>
+          <Titulo>{etiqueta}</Titulo>
+          <TextoSuave>Puedes marcar más de uno.</TextoSuave>
+          <View style={{ height: 8 }} />
+          <FlatList
+            data={opciones}
+            keyExtractor={(_, i) => String(i)}
+            ListEmptyComponent={<TextoSuave>{vacio}</TextoSuave>}
+            renderItem={({ item }) => {
+              const marcado = valores.includes(item.valor);
+              return (
+                <Pressable
+                  onPress={() => alternar(item.valor)}
+                  style={({ pressed }) => [
+                    estilos.opcion,
+                    { flexDirection: 'row', alignItems: 'center', gap: 14 },
+                    marcado && { borderColor: colores.primario, borderWidth: 3 },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <View style={[estilos.casilla, marcado && { backgroundColor: colores.primario }]}>
+                    {marcado ? <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: '700' }}>✓</Text> : null}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={estilos.opcionTexto}>{item.texto}</Text>
+                    {item.detalle ? <Text style={[estilos.opcionDetalle, { color: colores.textoSuave }]}>{item.detalle}</Text> : null}
+                  </View>
+                </Pressable>
+              );
+            }}
+          />
+          <Boton titulo="Listo" onPress={() => setAbierto(false)} />
+        </SafeAreaView>
+      </Modal>
+    </View>
+  );
+}
+
+// ---------- Ventana con varios campos de texto ----------
+
+export interface CampoModal {
+  clave: string;
+  etiqueta: string;
+  valor?: string;
+  obligatorio?: boolean;
+  placeholder?: string;
+}
+
+export function ModalCampos({
+  visible,
+  titulo,
+  campos,
+  textoAceptar = 'Guardar',
+  onAceptar,
+  onCancelar,
+}: {
+  visible: boolean;
+  titulo: string;
+  campos: CampoModal[];
+  textoAceptar?: string;
+  onAceptar: (valores: Record<string, string>) => void;
+  onCancelar: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancelar}>
+      <KeyboardAvoidingView style={estilos.fondoModal} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {visible ? (
+          <CajaCampos titulo={titulo} campos={campos} textoAceptar={textoAceptar} onAceptar={onAceptar} onCancelar={onCancelar} />
+        ) : null}
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function CajaCampos(props: {
+  titulo: string;
+  campos: CampoModal[];
+  textoAceptar: string;
+  onAceptar: (valores: Record<string, string>) => void;
+  onCancelar: () => void;
+}) {
+  const [valores, setValores] = useState<Record<string, string>>(() =>
+    Object.fromEntries(props.campos.map((c) => [c.clave, c.valor ?? '']))
+  );
+  const completo = props.campos.every((c) => !c.obligatorio || valores[c.clave]?.trim());
+  return (
+    <ScrollView style={estilos.cajaModal} keyboardShouldPersistTaps="handled">
+      <Titulo>{props.titulo}</Titulo>
+      {props.campos.map((c, i) => (
+        <Campo
+          key={c.clave}
+          etiqueta={c.etiqueta + (c.obligatorio ? '' : ' (opcional)')}
+          value={valores[c.clave]}
+          placeholder={c.placeholder}
+          autoFocus={i === 0}
+          onChangeText={(t) => setValores((v) => ({ ...v, [c.clave]: t }))}
+        />
+      ))}
+      <Boton
+        titulo={props.textoAceptar}
+        deshabilitado={!completo}
+        onPress={() => props.onAceptar(Object.fromEntries(Object.entries(valores).map(([k, v]) => [k, v.trim()])))}
+      />
+      <Boton titulo="Cancelar" variante="secundario" onPress={props.onCancelar} />
+    </ScrollView>
+  );
+}
+
+// ---------- Botón de ícono para la barra superior ----------
+
+export function BotonBarra({ icono, etiqueta, onPress }: { icono: 'cog' | 'chart-bar'; etiqueta: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={etiqueta}
+      hitSlop={10}
+      style={({ pressed }) => ({ padding: 8, opacity: pressed ? 0.6 : 1 })}
+    >
+      <MaterialCommunityIcons name={icono} size={30} color={colores.primarioTexto} />
+    </Pressable>
+  );
+}
+
 // ---------- Botones de filtro (tipo pestaña) ----------
 
 export function Filtros<T extends string>({
@@ -423,4 +579,13 @@ export const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   filtroTexto: { fontSize: 18, fontWeight: '700', color: colores.primario },
+  casilla: {
+    width: 36,
+    height: 36,
+    borderWidth: 2,
+    borderColor: colores.primario,
+    borderRadius: tamanos.radio,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

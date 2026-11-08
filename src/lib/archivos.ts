@@ -24,12 +24,15 @@ export function borrarArchivos(rutas: (string | undefined)[]) {
   }
 }
 
+// Formato de las fotos: 3:2 horizontal, igual que los recuadros de foto de los reportes Word
+const PROPORCION = 3 / 2;
+
 /**
  * Abre la cámara nativa, toma la foto en máxima calidad, la recorta al centro en
- * formato cuadrado (1:1) y la guarda en la carpeta "fotos" de la app.
+ * formato 3:2 horizontal y la guarda en la carpeta "fotos" de la app.
  * Devuelve la ruta relativa, o null si el usuario canceló.
  */
-export async function tomarFotoCuadrada(): Promise<string | null> {
+export async function tomarFoto(): Promise<string | null> {
   const permiso = await ImagePicker.requestCameraPermissionsAsync();
   if (!permiso.granted) {
     throw new Error('Debes permitir el uso de la cámara en los ajustes del teléfono.');
@@ -45,13 +48,19 @@ export async function tomarFotoCuadrada(): Promise<string | null> {
 
   // Primero leemos la imagen para conocer su tamaño real (ya con la rotación correcta)
   const imagen = await ImageManipulator.manipulate(origen).renderAsync();
-  const lado = Math.min(imagen.width, imagen.height);
+  // El rectángulo 3:2 más grande que cabe en la foto, centrado
+  let ancho = imagen.width;
+  let alto = Math.floor(ancho / PROPORCION);
+  if (alto > imagen.height) {
+    alto = imagen.height;
+    ancho = Math.floor(alto * PROPORCION);
+  }
   const recortada = await ImageManipulator.manipulate(imagen)
     .crop({
-      originX: Math.floor((imagen.width - lado) / 2),
-      originY: Math.floor((imagen.height - lado) / 2),
-      width: lado,
-      height: lado,
+      originX: Math.floor((imagen.width - ancho) / 2),
+      originY: Math.floor((imagen.height - alto) / 2),
+      width: ancho,
+      height: alto,
     })
     .renderAsync();
   const guardada = await recortada.saveAsync({ compress: 1, format: SaveFormat.JPEG });
@@ -73,7 +82,7 @@ function borrarTemporal(uri: string) {
 }
 
 /** Versión reducida de una foto, en base64, para insertarla en el PDF sin que pese demasiado. */
-export async function fotoParaPdf(rutaRelativa: string, ancho = 700): Promise<string> {
+export async function fotoParaPdf(rutaRelativa: string, ancho = 600): Promise<string> {
   const img = await ImageManipulator.manipulate(uriDe(rutaRelativa)).resize({ width: ancho }).renderAsync();
   const r = await img.saveAsync({ compress: 0.6, format: SaveFormat.JPEG, base64: true });
   borrarTemporal(r.uri);

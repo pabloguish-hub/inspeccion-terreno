@@ -143,8 +143,10 @@ export default function Configuracion() {
           {s.puntos.map((p) => (
             <View key={p.id} style={{ borderTopWidth: 1, borderTopColor: colores.borde, paddingVertical: 12 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', color: colores.texto }}>{p.nombre}</Text>
-                <EstadoChip estado={p.estado} />
+                <Text style={{ flex: 1, fontSize: 20, fontWeight: '700', color: colores.texto }}>
+                  N° {p.numero} — {p.nombre}
+                </Text>
+                <EstadoChip estado={p.estado === 'Sin inspección' ? 'Por revisar' : p.estado} />
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Boton

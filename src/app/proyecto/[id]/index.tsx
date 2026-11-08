@@ -1,43 +1,41 @@
-// Detalle de un proyecto: estado, inspección, configuración, pendientes y reportes.
+// Detalle de un proyecto: datos, estado, inspección / re-inspección, pendientes y reportes.
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { colores } from '@/components/tema';
-import { Boton, Etiqueta, Pantalla, TablaDatos, Tarjeta, TextoSuave, Titulo, estilos, Text } from '@/components/ui';
+import { colorEstado, colores } from '@/components/tema';
+import { Boton, Etiqueta, Pantalla, TablaDatos, Tarjeta, Text, TextoSuave, Titulo, estilos } from '@/components/ui';
 import { borrarArchivos } from '@/lib/archivos';
 import {
   ESTADOS_PROYECTO,
   cambiarEstadoProyecto,
-  db,
   descartarInspeccion,
   inspeccionEnCurso,
-  listarPuntosPendientes,
   listarReportes,
+  nombreInspeccion,
   obtenerProyecto,
+  resumenPuntos,
+  siguienteInspeccion,
   type Inspeccion,
   type Proyecto,
   type Reporte,
+  type TipoInspeccion,
 } from '@/lib/db';
-import { fechaHora } from '@/lib/fechas';
+import { fechaDia, fechaHora } from '@/lib/fechas';
 
 export default function DetalleProyecto() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const proyectoId = Number(id);
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [enCurso, setEnCurso] = useState<Inspeccion | null>(null);
-  const [pendientes, setPendientes] = useState(0);
-  const [totalPuntos, setTotalPuntos] = useState(0);
+  const [resumen, setResumen] = useState<Awaited<ReturnType<typeof resumenPuntos>> | null>(null);
+  const [siguiente, setSiguiente] = useState<{ tipo: TipoInspeccion; numero: number } | null>(null);
   const [reportes, setReportes] = useState<Reporte[]>([]);
 
   const cargar = useCallback(async () => {
     setProyecto(await obtenerProyecto(proyectoId));
     setEnCurso(await inspeccionEnCurso(proyectoId));
-    setPendientes((await listarPuntosPendientes(proyectoId)).length);
-    const t = await db.getFirstAsync<{ n: number }>(
-      `SELECT COUNT(*) AS n FROM puntos p JOIN sectores s ON s.id = p.sector_id WHERE s.proyecto_id = ?`,
-      proyectoId
-    );
-    setTotalPuntos(t?.n ?? 0);
+    setResumen(await resumenPuntos(proyectoId));
+    setSiguiente(await siguienteInspeccion(proyectoId));
     setReportes(await listarReportes(proyectoId));
   }, [proyectoId]);
 
@@ -47,7 +45,7 @@ export default function DetalleProyecto() {
     }, [cargar])
   );
 
-  if (!proyecto) return <Pantalla>{null}</Pantalla>;
+  if (!proyecto || !resumen || !siguiente) return <Pantalla>{null}</Pantalla>;
 
   function descartar() {
     if (!enCurso) return;
@@ -68,6 +66,9 @@ export default function DetalleProyecto() {
     );
   }
 
+  const porRevisar = resumen.pendientes + resumen.porRevisar;
+  const esPrimera = siguiente.tipo === 'Inspección';
+
   return (
     <Pantalla>
       <Stack.Screen options={{ title: proyecto.nombre }} />
@@ -76,85 +77,109 @@ export default function DetalleProyecto() {
       <TablaDatos
         filas={[
           ['Código', proyecto.codigo],
+          ['Revisión', proyecto.revision],
           ['Área', proyecto.area],
+          ['Contratista', proyecto.contratista],
+          ['N° contrato / OT', proyecto.contrato],
         ]}
       />
       <Boton
-        titulo="Editar datos"
+        titulo="Editar datos del proyecto"
         variante="secundario"
         onPress={() => router.push({ pathname: '/proyecto/formulario', params: { id: proyectoId } })}
       />
 
-      <Etiqueta>Estado del proyecto</Etiqueta>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-        {ESTADOS_PROYECTO.map((e) => {
-          const activo = proyecto.estado === e;
+      {/* Resumen de puntos con los colores de los reportes */}
+      <View style={{ flexDirection: 'row', gap: 6, marginVertical: 8 }}>
+        {(
+          [
+            ['Cerrado', resumen.cerrados, 'CERRADOS'],
+            ['Pendiente', resumen.pendientes, 'PENDIENTES'],
+            ['Anulado', resumen.anulados, 'ANULADOS'],
+            ['Sin inspección', resumen.porRevisar, 'POR REVISAR'],
+          ] as const
+        ).map(([estado, n, texto]) => {
+          const c = colorEstado(estado);
           return (
-            <Boton
-              key={e}
-              titulo={e}
-              variante={activo ? 'primario' : 'secundario'}
-              onPress={async () => {
-                await cambiarEstadoProyecto(proyectoId, e);
-                cargar();
-              }}
-              estilo={{ flex: 1, paddingHorizontal: 4 }}
-            />
+            <View key={estado} style={{ flex: 1, backgroundColor: c.fondo, borderRadius: 3, paddingVertical: 8, alignItems: 'center' }}>
+              <Text style={{ color: c.texto, fontSize: 26, fontWeight: '700' }}>{n}</Text>
+              <Text style={{ color: c.texto, fontSize: 13, fontWeight: '700' }}>{texto}</Text>
+            </View>
           );
         })}
       </View>
-      <TextoSuave>Estado actual: {proyecto.estado}</TextoSuave>
 
-      <View style={{ height: 20 }} />
+      <View style={{ height: 12 }} />
       {enCurso ? (
         <>
           <Boton
-            titulo="Continuar inspección en curso"
+            titulo={`Continuar ${nombreInspeccion(enCurso.tipo, enCurso.numero)}`}
             variante="exito"
             onPress={() =>
               router.push({ pathname: '/proyecto/[id]/inspeccion', params: { id: proyectoId, inspeccionId: enCurso.id } })
             }
           />
-          <TextoSuave>Iniciada el {fechaHora(enCurso.iniciada)}</TextoSuave>
+          <TextoSuave>
+            En curso desde el {enCurso.fecha ? fechaDia(enCurso.fecha) : fechaHora(enCurso.iniciada)}
+          </TextoSuave>
           <Boton titulo="Descartar inspección en curso" variante="peligro" onPress={descartar} estilo={{ marginTop: 8 }} />
         </>
-      ) : (
-        <Boton
-          titulo="Iniciar inspección"
-          variante="exito"
-          deshabilitado={totalPuntos === 0}
-          onPress={() => router.push({ pathname: '/proyecto/[id]/inspeccion', params: { id: proyectoId } })}
-        />
-      )}
-      {totalPuntos === 0 ? (
+      ) : resumen.total === 0 ? (
         <TextoSuave>Primero agrega sectores y puntos en «Sectores y puntos».</TextoSuave>
-      ) : null}
+      ) : esPrimera || porRevisar > 0 ? (
+        <Boton
+          titulo={esPrimera ? 'Iniciar Primera Inspección' : `Nueva Re-Inspección N° ${siguiente.numero}`}
+          onPress={() => router.push({ pathname: '/proyecto/[id]/inspeccion', params: { id: proyectoId } })}
+          estilo={{ minHeight: 80 }}
+        />
+      ) : (
+        <Tarjeta>
+          <Text style={{ fontSize: 19, fontWeight: '700', color: colores.cerrado }}>
+            Todos los puntos están cerrados o anulados. No se requiere nueva visita.
+          </Text>
+        </Tarjeta>
+      )}
 
       <Boton
-        titulo={`Puntos pendientes (${pendientes})`}
-        variante="alerta"
-        onPress={() => router.push(`/proyecto/${proyectoId}/pendientes`)}
-        estilo={{ marginTop: 12 }}
-      />
-      <Boton
-        titulo="Sectores y puntos"
+        titulo={`Puntos pendientes (${porRevisar})`}
         variante="secundario"
-        onPress={() => router.push(`/proyecto/${proyectoId}/configuracion`)}
+        onPress={() => router.push(`/proyecto/${proyectoId}/pendientes`)}
+        estilo={{ marginTop: 8 }}
       />
+      <Boton titulo="Sectores y puntos" variante="secundario" onPress={() => router.push(`/proyecto/${proyectoId}/configuracion`)} />
 
-      <View style={{ height: 16 }} />
-      <Titulo>Reportes generados</Titulo>
+      <Etiqueta>Estado del proyecto</Etiqueta>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+        {ESTADOS_PROYECTO.map((e) => (
+          <Boton
+            key={e}
+            titulo={e}
+            variante={proyecto.estado === e ? 'primario' : 'secundario'}
+            onPress={async () => {
+              await cambiarEstadoProyecto(proyectoId, e);
+              cargar();
+            }}
+            estilo={{ flex: 1, paddingHorizontal: 4 }}
+          />
+        ))}
+      </View>
+
+      <Titulo>Reportes</Titulo>
       {reportes.length === 0 ? (
         <TextoSuave>Todavía no hay reportes.</TextoSuave>
       ) : (
         reportes.map((r) => (
           <Tarjeta key={r.id} onPress={() => router.push(`/reporte/${r.id}`)}>
             <Text style={estilos.opcionTexto}>{r.nombre}</Text>
-            <Text style={{ fontSize: 17, color: colores.textoSuave }}>{fechaHora(r.fecha)}</Text>
+            <Text style={{ fontSize: 17, color: colores.textoSuave }}>
+              {r.codigo ? `${r.codigo} · ` : ''}
+              {fechaHora(r.fecha)}
+            </Text>
             <Text style={{ fontSize: 17, marginTop: 4 }}>
               {r.total} puntos ·{' '}
-              <Text style={{ color: colores.cerrado, fontWeight: '800' }}>{r.cerrados} cerrados</Text> ·{' '}
-              <Text style={{ color: colores.pendiente, fontWeight: '800' }}>{r.pendientes} pendientes</Text>
+              <Text style={{ color: colores.cerrado, fontWeight: '700' }}>{r.cerrados} cerrados</Text> ·{' '}
+              <Text style={{ color: colores.pendiente, fontWeight: '700' }}>{r.pendientes} pendientes</Text>
+              {r.anulados ? ` · ${r.anulados} anulados` : ''}
             </Text>
           </Tarjeta>
         ))
