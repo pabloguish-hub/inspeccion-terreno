@@ -2,7 +2,7 @@
   "expo": {
     "name": "Inspección ITO — Teck CDA",
     "slug": "inspeccion-terreno",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/teck/icono.png",
     "userInterfaceStyle": "light",
