@@ -342,6 +342,7 @@ const CAPITULOS = [
 ];
 
 // ---------- Construcción de la página ----------
+const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const toc = document.getElementById('toc');
 const main = document.getElementById('main');
 CAPITULOS.forEach((c, idx) => {
@@ -370,7 +371,6 @@ CAPITULOS.forEach((c, idx) => {
 });
 
 // ---------- Reproductor ----------
-const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function iniciarPlayer(el, pasos) {
   const imgs = [...el.querySelectorAll('.phone img')];
   const dots = [...el.querySelectorAll('.dots i')];
