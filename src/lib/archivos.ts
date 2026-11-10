@@ -2,6 +2,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 const carpeta = (nombre: string) => {
   const dir = new Directory(Paths.document, nombre);
@@ -10,7 +11,9 @@ const carpeta = (nombre: string) => {
 };
 
 // Guardamos rutas relativas (ej: "fotos/123.jpg") y las convertimos a URI al usarlas.
-export const uriDe = (rutaRelativa: string) => new File(Paths.document, rutaRelativa).uri;
+export const uriDe = (rutaRelativa: string) =>
+  // En web (modo demostración en el PC) los archivos se sirven desde la carpeta public/
+  Platform.OS === 'web' ? `/${rutaRelativa}` : new File(Paths.document, rutaRelativa).uri;
 
 export function borrarArchivos(rutas: (string | undefined)[]) {
   for (const r of rutas) {

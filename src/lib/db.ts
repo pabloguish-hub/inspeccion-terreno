@@ -1,7 +1,10 @@
 // Base de datos local (SQLite). Todo queda guardado en el teléfono, sin internet.
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
-export const db = SQLite.openDatabaseSync('inspecciones.db');
+// En el teléfono la base se abre de inmediato. En web (modo demostración en el PC) hay que abrirla
+// de forma asíncrona, porque el motor SQLite se carga en segundo plano; se asigna en iniciarBaseDatos().
+export let db: SQLite.SQLiteDatabase = Platform.OS === 'web' ? (null as unknown as SQLite.SQLiteDatabase) : SQLite.openDatabaseSync('inspecciones.db');
 
 export type EstadoProyecto = 'Pendiente' | 'En ejecución' | 'Cerrado';
 export const ESTADOS_PROYECTO: EstadoProyecto[] = ['Pendiente', 'En ejecución', 'Cerrado'];
@@ -114,6 +117,7 @@ export interface Ajustes {
 // ---------- Creación y migración ----------
 
 export async function iniciarBaseDatos() {
+  if (Platform.OS === 'web' && !db) db = await SQLite.openDatabaseAsync('inspecciones.db');
   // Estructura original (versión 0). Se mantiene tal cual para que las migraciones
   // de abajo funcionen igual en una instalación nueva y en una que ya tiene datos.
   await db.execAsync(`
@@ -175,7 +179,11 @@ export async function iniciarBaseDatos() {
   `);
 
   const version = (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))?.user_version ?? 0;
-  if (version < 1) await db.withExclusiveTransactionAsync(migrarAVersion1);
+  if (version < 1) {
+    // En web (solo para capturas y pruebas en el PC) no existen las transacciones exclusivas
+    if (Platform.OS === 'web') await db.withTransactionAsync(() => migrarAVersion1(db));
+    else await db.withExclusiveTransactionAsync(migrarAVersion1);
+  }
 }
 
 /**

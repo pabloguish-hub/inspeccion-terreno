@@ -4,7 +4,7 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { colores, fuentes } from '@/components/tema';
 import { BotonBarra, LogoBarra } from '@/components/ui';
 import { iniciarBaseDatos } from '@/lib/db';
@@ -19,6 +19,12 @@ export default function Layout() {
 
   useEffect(() => {
     iniciarBaseDatos()
+      .then(async () => {
+        // Modo demostración: solo en el navegador del PC, en desarrollo y con ?demo en la dirección
+        if (Platform.OS === 'web' && __DEV__ && window.location.search.includes('demo')) {
+          await (await import('@/lib/demo')).cargarDatosDemo();
+        }
+      })
       .then(() => setDbLista(true))
       .catch((e) => setError(String(e)));
   }, []);

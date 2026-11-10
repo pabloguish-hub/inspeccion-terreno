@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de uso — Inspección ITO Teck CDA</title>
+<style>
+  @font-face { font-family: Carlito; font-weight: 400; src: url(../node_modules/@expo-google-fonts/carlito/400Regular/Carlito_400Regular.ttf); }
+  @font-face { font-family: Carlito; font-weight: 700; src: url(../node_modules/@expo-google-fonts/carlito/700Bold/Carlito_700Bold.ttf); }
+  @page { size: A4; margin: 24mm 18mm 22mm 18mm; }
+  html { font-family: Carlito, Calibri, "Segoe UI", sans-serif; color: #1B1B1B; font-size: 11.5pt; line-height: 1.4; }
+  body { margin: 0; }
+  h1 { color: #000F3F; font-size: 24pt; margin: 0 0 6pt; border-bottom: 2px solid #000F3F; padding-bottom: 4pt; page-break-after: avoid; }
+  h2 { color: #000F3F; font-size: 15pt; margin: 18pt 0 6pt; page-break-after: avoid; }
+  h3 { color: #000F3F; font-size: 12.5pt; margin: 14pt 0 4pt; page-break-after: avoid; }
+  p { margin: 4pt 0 8pt; }
+  ul, ol { margin: 4pt 0 8pt; padding-left: 20pt; } li { margin: 2pt 0; }
+  .capitulo { page-break-before: always; }
+  .eyebrow { color: #595959; font-weight: 700; font-size: 10pt; letter-spacing: .4pt; text-transform: uppercase; margin: 0 0 2pt; }
+  .nota { background: #EDEDED; border-left: 4px solid #000F3F; padding: 8pt 10pt; margin: 8pt 0 10pt; page-break-inside: avoid; }
+  .nota b:first-child { color: #000F3F; }
+  .aviso { background: #FFF4D6; border-left: 4px solid #FFC000; padding: 8pt 10pt; margin: 8pt 0 10pt; page-break-inside: avoid; }
+  .figuras { display: flex; gap: 12pt; align-items: flex-start; justify-content: center; margin: 10pt 0 12pt; page-break-inside: avoid; }
+  .fig { flex: 0 0 auto; text-align: center; width: 62mm; }
+  .fig.ancha { width: 170mm; }
+  .fig img { width: 100%; height: auto; display: block; border: 0.6pt solid #BFBFBF; border-radius: 10px; }
+  .fig.pagina img { border-radius: 0; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .fig .pie { color: #595959; font-size: 9.5pt; margin-top: 4pt; line-height: 1.25; }
+  .fig .pie b { color: #000F3F; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; page-break-inside: avoid; }
+  th, td { border: 0.6pt solid #000; padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background: #000F3F; color: #fff; }
+  td.etq { background: #EDEDED; font-weight: 700; width: 32%; }
+  .chip { display: inline-block; font-weight: 700; padding: 1pt 8pt; border-radius: 3px; font-size: 10pt; white-space: nowrap; }
+  .c-ok { background: #00B050; color: #fff; } .c-pen { background: #C00000; color: #fff; } .c-anu { background: #FFC000; color: #000F3F; } .c-rev { background: #595959; color: #fff; }
+  .paso { display: flex; gap: 10pt; margin: 6pt 0; page-break-inside: avoid; }
+  .paso .n { flex: 0 0 22pt; height: 22pt; border-radius: 50%; background: #000F3F; color: #fff; font-weight: 700; text-align: center; line-height: 22pt; }
+  .paso div:last-child { flex: 1; }
+  kbd { font-family: inherit; font-weight: 700; color: #000F3F; }
+
+  /* Portada */
+  .portada { height: 240mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .portada .logo { width: 70mm; }
+  .portada .titulo { color: #000F3F; font-size: 34pt; font-weight: 700; line-height: 1.1; margin: 0; }
+  .portada .sub { color: #595959; font-size: 15pt; margin: 8pt 0 0; }
+  .portada .icono { width: 28mm; border-radius: 6mm; }
+  .portada table { width: 100mm; }
+  .indice li { margin: 3pt 0; }
+  .indice ul { list-style: none; padding-left: 14pt; } .indice > ol > li { font-weight: 700; color: #000F3F; } .indice ul li { font-weight: 400; color: #1B1B1B; }
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<div class="portada">
+  <div>
+    <img class="logo" src="capturas/logo.png" alt="Carmen de Andacollo / Teck">
+  </div>
+  <div>
+    <p class="eyebrow">Manual de uso</p>
+    <p class="titulo">Inspección ITO<br>Teck CDA</p>
+    <p class="sub">Aplicación Android para reportes de inspección en terreno</p>
+  </div>
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20mm">
+    <table>
+      <tr><td class="etq">Versión de la app</td><td>1.1.0</td></tr>
+      <tr><td class="etq">Fecha</td><td>Noviembre de 2026</td></tr>
+      <tr><td class="etq">Dirigido a</td><td>Inspectores ITO en terreno</td></tr>
+    </table>
+    <img class="icono" src="capturas/icono.png" alt="Ícono de la app">
+  </div>
+</div>
+
+<!-- ============ ÍNDICE ============ -->
+<div class="capitulo indice">
+  <h1>Contenido</h1>
+  <ol>
+    <li>Qué hace la app
+      <ul><li>Instalación y permisos · Funciona sin internet · Dónde quedan los datos</li></ul></li>
+    <li>Primeros pasos
+      <ul><li>Ajustes del inspector · La pantalla principal</li></ul></li>
+    <li>Crear un proyecto
+      <ul><li>Datos del proyecto · Alcance · Documentos de referencia · Sectores y puntos</li></ul></li>
+    <li>El detalle del proyecto</li>
+    <li>La Primera Inspección, paso a paso
+      <ul><li>Antecedentes · Elegir el punto · Fotos · Cerrar el punto · Estados · Puntos sin revisar · Próxima visita</li></ul></li>
+    <li>Re-Inspecciones</li>
+    <li>Puntos pendientes e historial</li>
+    <li>Los reportes PDF
+      <ul><li>Ver y compartir · Cómo es el reporte de Primera Inspección · Cómo es el reporte de Re-Inspección</li></ul></li>
+    <li>Dashboards</li>
+    <li>Consejos de terreno y preguntas frecuentes</li>
+    <li>Resumen de estados y colores</li>
+  </ol>
+  <div class="nota"><b>Sobre las imágenes de este manual.</b> Las capturas son pantallas reales de la app con un proyecto de ejemplo. Las fotos aparecen como recuadros grises («Insertar foto») porque el ejemplo no tiene fotos de terreno; en tu teléfono verás las fotos que tomes con la cámara.</div>
+</div>
+
+<!-- ============ 1 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 1</p>
+  <h1>Qué hace la app</h1>
+  <p><b>Inspección ITO — Teck CDA</b> sirve para hacer inspecciones en terreno con el teléfono y obtener, al final, un reporte PDF con el formato oficial de Teck: logo, tablas, estado de cada punto en color, fotos numeradas, firmas y «Página X de Y».</p>
+  <p>Trabaja con <b>proyectos</b>. Cada proyecto tiene <b>sectores</b>, y cada sector tiene <b>puntos de inspección</b>. En la <b>Primera Inspección</b> se revisan todos los puntos; los que quedan pendientes se vuelven a revisar en <b>Re-Inspecciones</b> (N° 1, N° 2, N° 3…) hasta que no quede ninguno.</p>
+
+  <h2>Instalación y permisos</h2>
+  <div class="paso"><div class="n">1</div><div>Abre en el teléfono el enlace del APK que entrega la compilación (o el archivo <b>.apk</b>) y toca <kbd>Instalar</kbd>.</div></div>
+  <div class="paso"><div class="n">2</div><div>Si Android pregunta, permite <b>«instalar apps desconocidas»</b> para el navegador o para Archivos. Si aparece Play Protect, toca <kbd>Más detalles</kbd> → <kbd>Instalar de todas formas</kbd>. Aparece solo porque la app no viene de Play Store.</div></div>
+  <div class="paso"><div class="n">3</div><div>La app se llama <b>Inspección ITO — Teck CDA</b> y su ícono es «Teck» en blanco sobre azul. La primera vez que tomes una foto pedirá permiso para usar la <b>cámara</b>. Es el único permiso que necesita.</div></div>
+  <div class="paso"><div class="n">4</div><div>Para <b>actualizar</b> a una versión nueva, instala el APK nuevo encima: no desinstales el anterior. Tus proyectos, fotos y reportes se conservan.</div></div>
+
+  <h2>Funciona sin internet</h2>
+  <p>Todo lo que haces queda guardado <b>dentro del teléfono</b>: proyectos, puntos, fotos, inspecciones y los PDF. No necesitas señal ni Wi-Fi en ningún paso, ni para generar el reporte. Solo necesitas conexión cuando quieras <b>compartir</b> un PDF por WhatsApp, correo o Drive.</p>
+
+  <div class="aviso"><b>Respaldo.</b> Los datos existen solo en ese teléfono. Si desinstalas la app o pierdes el teléfono, se pierden. Comparte los PDF apenas los generes (por correo o a una carpeta de Drive): ese es tu respaldo.</div>
+</div>
+
+<!-- ============ 2 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 2</p>
+  <h1>Primeros pasos</h1>
+
+  <h2>Ajustes del inspector</h2>
+  <p>Lo primero es escribir tu nombre y tu cargo. Aparecen en el campo «Elaborado por» y en la firma de todos los reportes, y la app los usa para rellenar el «personal presente».</p>
+  <div class="paso"><div class="n">1</div><div>En la pantalla principal, toca el ícono <b>⚙</b> (engranaje) arriba a la derecha.</div></div>
+  <div class="paso"><div class="n">2</div><div>Escribe el <b>Nombre</b> (por ejemplo, Pablo Muñoz) y el <b>Cargo</b> (por ejemplo, ITO Estructural) y toca <kbd>Guardar</kbd>.</div></div>
+
+  <h2>La pantalla principal</h2>
+  <p>Muestra la lista de proyectos. Cada tarjeta tiene el nombre, el código, el área y el estado del proyecto. Los botones <kbd>Todos</kbd>, <kbd>Pendiente</kbd>, <kbd>En ejecución</kbd> y <kbd>Cerrado</kbd> filtran la lista. Arriba a la derecha están el <b>Dashboard general</b> (📊) y los <b>Ajustes</b> (⚙).</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/proyectos.png" alt=""><div class="pie"><b>Figura 1.</b> Pantalla principal con tres proyectos y sus estados.</div></div>
+    <div class="fig"><img src="capturas/ajustes.png" alt=""><div class="pie"><b>Figura 2.</b> Ajustes: nombre y cargo del inspector.</div></div>
+  </div>
+  <div class="nota"><b>Estado del proyecto.</b> Es administrativo y lo cambias tú a mano desde el detalle del proyecto: <b>Pendiente</b> (todavía no se inspecciona), <b>En ejecución</b> (hay inspecciones en marcha) y <b>Cerrado</b> (terminado). No cambia solo.</div>
+</div>
+
+<!-- ============ 3 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 3</p>
+  <h1>Crear un proyecto</h1>
+  <p>Toca <kbd>+ Nuevo proyecto</kbd> en la pantalla principal. Los datos que escribas aquí van directo a la portada y a las tablas del PDF, así que conviene escribirlos como quieres verlos en el reporte.</p>
+
+  <h2>Datos del proyecto</h2>
+  <table>
+    <tr><th>Campo</th><th>Para qué sirve</th><th>Ejemplo</th></tr>
+    <tr><td>Nombre</td><td>Nombre del trabajo inspeccionado. Va en la portada y en el pie de página.</td><td>Montaje de soportes de piping, Línea de agua Eje 8</td></tr>
+    <tr><td>Código</td><td>Código del reporte. Las re-inspecciones agregan «-RI1», «-RI2»…</td><td>CDA-ITO-015</td></tr>
+    <tr><td>Revisión</td><td>Revisión del documento. Parte en 0.</td><td>0</td></tr>
+    <tr><td>Área</td><td>Área de la planta o del proyecto.</td><td>PMO — Estructuras / Piping</td></tr>
+    <tr><td>Contratista</td><td>Empresa contratista. Va en los antecedentes del reporte.</td><td>Montajes Norte SpA</td></tr>
+    <tr><td>N° contrato / OT</td><td>Contrato u orden de trabajo.</td><td>OT-4471</td></tr>
+  </table>
+  <p>Nombre, código y área son obligatorios. El resto se puede completar después con <kbd>Editar datos del proyecto</kbd>.</p>
+
+  <h2>Alcance</h2>
+  <p>Dos listas: lo que la inspección <b>incluye</b> y lo que <b>excluye</b>. Cada ítem se agrega con <kbd>+ Agregar incluido</kbd> o <kbd>+ Agregar excluido</kbd>, y se puede editar o borrar. En el PDF aparecen en la sección «1. Alcance».</p>
+
+  <h2>Documentos de referencia</h2>
+  <p>Planos, especificaciones y normas del proyecto, con <b>Código</b>, <b>Título</b> y <b>Rev.</b>. Aparecen en la sección «2. Documentos de referencia» del reporte y, lo más útil, se pueden <b>citar en cada punto pendiente</b> desde un menú, para indicar qué documento incumple el hallazgo.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/nuevo-proyecto.png" alt=""><div class="pie"><b>Figura 3.</b> Formulario de proyecto nuevo.</div></div>
+    <div class="fig"><img src="capturas/agregar-documento.png" alt=""><div class="pie"><b>Figura 4.</b> Agregar un documento de referencia.</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/editar-proyecto-alcance.png" alt=""><div class="pie"><b>Figura 5.</b> Edición de un proyecto: ítems del alcance y comienzo de los documentos de referencia.</div></div>
+    <div class="fig"><img src="capturas/editar-proyecto-documentos.png" alt=""><div class="pie"><b>Figura 5b.</b> Más abajo, los documentos de referencia con sus botones.</div></div>
+  </div>
+
+  <h2>Sectores y puntos</h2>
+  <p>Después de guardar, entra al proyecto y toca <kbd>Sectores y puntos</kbd>. Aquí defines <b>qué se va a inspeccionar</b>:</p>
+  <div class="paso"><div class="n">1</div><div><kbd>+ Agregar sector</kbd>: una zona de la obra (Eje 8, Chancador — lado norte, Pasarela…).</div></div>
+  <div class="paso"><div class="n">2</div><div>Dentro de cada sector, <kbd>+ Agregar punto</kbd>: cada cosa concreta que se revisa (Torque de pernos de anclaje, Inspección visual de soldaduras…).</div></div>
+  <div class="paso"><div class="n">3</div><div>Cada punto recibe un <b>N° fijo</b> dentro del proyecto. Ese número se mantiene igual en todos los reportes, aunque borres o agregues otros puntos.</div></div>
+  <p>Desde esta pantalla también puedes <kbd>Editar</kbd> el nombre, ver el <kbd>Historial</kbd> de un punto o <kbd>Borrar</kbd> un punto o un sector (pide confirmación, porque borra también sus fotos).</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/sectores-puntos.png" alt=""><div class="pie"><b>Figura 6.</b> Sectores y puntos, con el N° y el estado de cada punto.</div></div>
+    <div class="fig"><img src="capturas/agregar-sector.png" alt=""><div class="pie"><b>Figura 7.</b> Ventana para agregar un sector.</div></div>
+  </div>
+  <div class="nota"><b>Puntos agregados después.</b> Si agregas un punto cuando ya hiciste la Primera Inspección, no se pierde: aparece en la siguiente Re-Inspección marcado como «Punto nuevo» y recibe el N° siguiente.</div>
+</div>
+
+<!-- ============ 4 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 4</p>
+  <h1>El detalle del proyecto</h1>
+  <p>Al tocar un proyecto se abre su pantalla principal. De arriba hacia abajo:</p>
+  <ul>
+    <li><b>Tabla de datos</b> (código, revisión, área, contratista, contrato) y el botón <kbd>Editar datos del proyecto</kbd>.</li>
+    <li><b>Resumen de puntos</b> en cuatro colores: <span class="chip c-ok">CERRADOS</span> <span class="chip c-pen">PENDIENTES</span> <span class="chip c-anu">ANULADOS</span> <span class="chip c-rev">POR REVISAR</span>.</li>
+    <li><b>El botón principal</b>, que cambia según la situación del proyecto:
+      <ul>
+        <li><kbd>Iniciar Primera Inspección</kbd> si todavía no se ha inspeccionado.</li>
+        <li><kbd>Nueva Re-Inspección N° …</kbd> si quedan puntos pendientes o nuevos.</li>
+        <li><kbd>Continuar …</kbd> (verde) si hay una inspección a medio hacer, con la opción <kbd>Descartar inspección en curso</kbd>.</li>
+        <li>El mensaje «Todos los puntos están cerrados o anulados» cuando no queda nada por revisar.</li>
+      </ul></li>
+    <li><kbd>Puntos pendientes</kbd>, <kbd>Dashboard del proyecto</kbd> y <kbd>Sectores y puntos</kbd>.</li>
+    <li><b>Estado del proyecto</b> (Pendiente / En ejecución / Cerrado) y la lista de <b>Reportes</b> generados, con su código, fecha y totales.</li>
+  </ul>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/detalle-proyecto.png" alt=""><div class="pie"><b>Figura 8.</b> Detalle de un proyecto con una Re-Inspección en curso.</div></div>
+    <div class="fig"><img src="capturas/proyecto-sin-inspeccion.png" alt=""><div class="pie"><b>Figura 9.</b> Proyecto recién configurado: todos los puntos por revisar y el botón «Iniciar Primera Inspección».</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/detalle-proyecto-reportes.png" alt=""><div class="pie"><b>Figura 10.</b> El mismo detalle, más abajo: estado del proyecto y lista de reportes.</div></div>
+  </div>
+</div>
+
+<!-- ============ 5 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 5</p>
+  <h1>La Primera Inspección, paso a paso</h1>
+  <p>La Primera Inspección revisa <b>todos</b> los puntos configurados del proyecto. El recorrido es siempre el mismo: antecedentes → elegir punto → fotos → cerrar el punto → siguiente punto… → finalizar → PDF.</p>
+
+  <h2>Paso 1. Antecedentes</h2>
+  <p>Al tocar <kbd>Iniciar Primera Inspección</kbd> la app pide la <b>fecha</b> (viene la de hoy), el <b>sector / área</b> y el <b>personal presente</b>. El personal viene rellenado con tu nombre; agrega al supervisor del contratista separado por punto y coma. Estos datos van a la tabla «Antecedentes de la inspección» del PDF. Toca <kbd>Comenzar</kbd>.</p>
+
+  <h2>Paso 2. Elegir sector y punto</h2>
+  <p>Dos menús grandes: primero el <b>Sector</b> y luego el <b>Punto de inspección</b>. Solo aparecen los puntos que todavía no se han revisado en esta inspección. Los puntos ya cerrados o anulados no se muestran.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/antecedentes-inspeccion.png" alt=""><div class="pie"><b>Figura 11.</b> Antecedentes al iniciar la inspección.</div></div>
+    <div class="fig"><img src="capturas/menu-sector.png" alt=""><div class="pie"><b>Figura 12.</b> Menú de sectores.</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/menu-punto.png" alt=""><div class="pie"><b>Figura 13.</b> Menú de puntos del sector elegido. Los pendientes se marcan en rojo.</div></div>
+    <div class="fig"><img src="capturas/punto-elegido.png" alt=""><div class="pie"><b>Figura 14.</b> Punto elegido: ya se puede tomar la foto o registrar sin foto.</div></div>
+  </div>
+
+  <h2>Paso 3. Fotos</h2>
+  <p>Toca <kbd>📷 Tomar foto</kbd>. Se abre la cámara del teléfono; la foto se guarda en máxima calidad y se recorta en formato 3:2, igual que los recuadros de foto del reporte. Después puedes:</p>
+  <ul>
+    <li><kbd>📷 Agregar foto</kbd> para tomar más fotos del mismo punto.</li>
+    <li><b>Tocar una foto</b> para escribir su <b>pie de foto</b> (el texto que va bajo la foto en el PDF) o para quitarla.</li>
+    <li><kbd>Continuar</kbd> para cerrar el punto y seguir con otro, o <kbd>Finalizar</kbd> si es el último.</li>
+  </ul>
+  <p>Si un punto no necesita foto (por ejemplo, para anular uno), usa <kbd>Registrar sin foto</kbd>.</p>
+
+  <h2>Paso 4. Cerrar el punto</h2>
+  <p>Escribe la <b>Observación</b> y elige el <b>estado</b>:</p>
+  <table>
+    <tr><th style="width:26%">Estado</th><th>Cuándo usarlo</th><th style="width:34%">Qué pide la app</th></tr>
+    <tr><td><span class="chip c-ok">CERRADO</span></td><td>El punto está conforme.</td><td>Nada más.</td></tr>
+    <tr><td><span class="chip c-pen">PENDIENTE</span></td><td>Hay un hallazgo que el contratista debe corregir. El punto volverá a aparecer en la próxima Re-Inspección.</td><td>Opcional: uno o más <b>documentos de referencia</b> del proyecto y un <b>detalle</b> (por ejemplo, «Tabla 341.3.2 — Criterios de aceptación»).</td></tr>
+    <tr><td><span class="chip c-anu">ANULADO</span></td><td>El punto dejó de aplicar (se eliminó por cambio de ingeniería, no hay acceso, etc.). No vuelve a aparecer en ninguna inspección.</td><td>El <b>motivo</b>, obligatorio.</td></tr>
+  </table>
+  <p>Luego toca <kbd>Guardar y continuar</kbd>. La app vuelve al menú de puntos con el mismo sector elegido, para seguir rápido con el siguiente.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/fotos-del-punto.png" alt=""><div class="pie"><b>Figura 15.</b> Fotos del punto, con sus pies de foto.</div></div>
+    <div class="fig"><img src="capturas/cerrar-punto-cerrado.png" alt=""><div class="pie"><b>Figura 16.</b> Cierre de un punto conforme (CERRADO).</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/cerrar-punto-pendiente.png" alt=""><div class="pie"><b>Figura 17.</b> Punto PENDIENTE: aparecen el documento de referencia y el detalle.</div></div>
+    <div class="fig"><img src="capturas/menu-documentos.png" alt=""><div class="pie"><b>Figura 18.</b> Menú de documentos de referencia: se pueden marcar varios.</div></div>
+  </div>
+
+  <h2>Paso 5. Finalizar</h2>
+  <p>Cuando no quedan puntos por elegir, o cuando tocas <kbd>Finalizar</kbd> / <kbd>Finalizar inspección</kbd>, la app revisa que todo esté completo:</p>
+  <ul>
+    <li><b>Si quedan puntos sin revisar</b>, aparece un aviso con la lista. Puedes <kbd>Volver a revisarlos</kbd> o escribir un motivo y <kbd>Anular … y finalizar</kbd>. En la Primera Inspección ningún punto puede quedar sin revisar: o se revisa o se anula.</li>
+    <li><b>Si quedan puntos pendientes</b>, pide la <b>Próxima visita</b>: fecha y responsable del cierre. Van a la sección «Próxima visita» del PDF.</li>
+    <li>Si todo quedó cerrado, el PDF dirá «Todos los puntos inspeccionados quedaron cerrados. No se requiere nueva visita.»</li>
+  </ul>
+  <p>Al tocar <kbd>Generar PDF</kbd> el reporte se arma en unos segundos y se abre en pantalla, listo para compartir.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/puntos-sin-revisar.png" alt=""><div class="pie"><b>Figura 19.</b> Aviso de puntos sin revisar al finalizar.</div></div>
+    <div class="fig"><img src="capturas/proxima-visita.png" alt=""><div class="pie"><b>Figura 20.</b> Próxima visita: fecha y responsable del cierre.</div></div>
+  </div>
+  <div class="nota"><b>Si se cierra la app a mitad de camino</b> (se apagó el teléfono, entró una llamada), no se pierde nada. Al volver al proyecto aparece <kbd>Continuar …</kbd> y retomas exactamente donde estabas, con las fotos ya tomadas. Si prefieres empezar de nuevo, usa <kbd>Descartar inspección en curso</kbd>.</div>
+</div>
+
+<!-- ============ 6 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 6</p>
+  <h1>Re-Inspecciones</h1>
+  <p>Después de la Primera Inspección, mientras queden puntos pendientes, el proyecto muestra el botón <kbd>Nueva Re-Inspección N° 1</kbd> (luego N° 2, N° 3…). Una Re-Inspección funciona igual que la primera, con tres diferencias:</p>
+  <ul>
+    <li>Solo muestra los <b>puntos pendientes</b> y los <b>puntos nuevos</b> (agregados después de la Primera Inspección).</li>
+    <li>Al cerrar un punto, la app muestra el <b>hallazgo original</b> y el campo se llama <b>Verificación</b>: escribes qué encontraste ahora. Si sigue sin corregirse, lo dejas PENDIENTE y pasa a la siguiente Re-Inspección.</li>
+    <li>El reporte tiene su propio formato (ver capítulo 8) y el código del proyecto con el sufijo <b>-RI1</b>, <b>-RI2</b>…</li>
+  </ul>
+  <p>En una Re-Inspección sí puedes finalizar aunque queden puntos sin revisar: la app avisa cuántos quedan y los deja para la siguiente.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/cerrar-punto.png" alt=""><div class="pie"><b>Figura 21.</b> Cierre de un punto en una Re-Inspección: hallazgo original y verificación.</div></div>
+    <div class="fig"><img src="capturas/seleccion-sin-puntos.png" alt=""><div class="pie"><b>Figura 22.</b> Cuando no quedan puntos, solo queda finalizar.</div></div>
+  </div>
+</div>
+
+<!-- ============ 7 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 7</p>
+  <h1>Puntos pendientes e historial</h1>
+  <p><kbd>Puntos pendientes</kbd>, en el detalle del proyecto, lista los puntos con hallazgo pendiente y los puntos nuevos sin revisar, con la última observación y la fecha. Desde ahí se inicia la siguiente Re-Inspección.</p>
+  <p>Al tocar un punto (aquí o en «Sectores y puntos» → <kbd>Historial</kbd>) se abre su <b>historial completo</b>: cada inspección en la que se revisó, con fecha, estado, observación, documento de referencia y fotos. Es la forma más rápida de ver cómo evolucionó un hallazgo.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/pendientes.png" alt=""><div class="pie"><b>Figura 23.</b> Puntos pendientes del proyecto.</div></div>
+    <div class="fig"><img src="capturas/historial-punto.png" alt=""><div class="pie"><b>Figura 24.</b> Historial de un punto, de la revisión más reciente a la más antigua.</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/historial-punto-2.png" alt=""><div class="pie"><b>Figura 24b.</b> El mismo historial, más abajo: la revisión de la Primera Inspección con su documento de referencia y sus fotos.</div></div>
+  </div>
+</div>
+
+<!-- ============ 8 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 8</p>
+  <h1>Los reportes PDF</h1>
+
+  <h2>Ver y compartir</h2>
+  <p>Cada reporte queda guardado en el proyecto, en la lista <b>Reportes</b>. Al tocarlo se abre dentro de la app: arriba los datos y totales, al centro el PDF (se puede <b>ampliar con dos dedos</b>) y abajo los botones <kbd>Compartir PDF</kbd> y <kbd>Proyecto</kbd>.</p>
+  <p><kbd>Compartir PDF</kbd> abre el menú de Android: WhatsApp, Gmail, Drive, Bluetooth o cualquier app que acepte archivos. El archivo se llama como el código del reporte, por ejemplo <b>CDA-ITO-015_07-11-2026.pdf</b>.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/reporte.png" alt=""><div class="pie"><b>Figura 25.</b> Un reporte abierto dentro de la app.</div></div>
+  </div>
+
+  <h2>Cómo es el reporte de Primera Inspección</h2>
+  <p>Replica el formato oficial. Todas las páginas llevan el encabezado (logo, nombre del reporte, código y revisión) y el pie (proyecto, área y «Página X de Y»).</p>
+  <ol>
+    <li><b>Portada</b>: logo, título, nombre del proyecto y tabla con tipo de documento, proyecto, código, revisión, área, elaborado por y fecha.</li>
+    <li><b>1. Alcance</b> (incluido y excluido) · <b>2. Documentos de referencia</b> · <b>3. Antecedentes de la inspección</b>.</li>
+    <li><b>4. Puntos inspeccionados</b>: tabla con N°, descripción (y el documento de referencia si está pendiente), estado en color y fotos numeradas con su pie.</li>
+    <li><b>5. Próxima visita</b> y las <b>firmas</b> del ITO y del supervisor contratista.</li>
+  </ol>
+  <div class="figuras">
+    <div class="fig pagina" style="width:84mm"><img src="capturas/CDA-ITO-015-p1.png" alt=""><div class="pie"><b>Figura 26.</b> Página 1: portada, alcance, documentos y antecedentes.</div></div>
+    <div class="fig pagina" style="width:84mm"><img src="capturas/CDA-ITO-015-p2.png" alt=""><div class="pie"><b>Figura 27.</b> Página 2: puntos inspeccionados con estado y fotos.</div></div>
+  </div>
+
+  <h2>Cómo es el reporte de Re-Inspección</h2>
+  <ol>
+    <li><b>Portada</b> con el código «-RI N°» y el texto «Seguimiento de puntos pendientes del reporte …».</li>
+    <li><b>1. Antecedentes</b>: reporte original con su fecha, re-inspección anterior (o «No aplica»), fecha, sector, contratista, contrato y personal.</li>
+    <li><b>2. Puntos re-inspeccionados</b>: para cada punto, el <b>hallazgo original</b> y la <b>verificación</b>, con estado y fotos.</li>
+    <li><b>3. Resumen</b> (re-inspeccionados, cerrados, pendientes, anulados) · <b>4. Próxima visita</b> · firmas.</li>
+  </ol>
+  <div class="figuras">
+    <div class="fig pagina" style="width:84mm"><img src="capturas/CDA-ITO-015-RI1-p1.png" alt=""><div class="pie"><b>Figura 28.</b> Re-Inspección N° 1, página 1.</div></div>
+    <div class="fig pagina" style="width:84mm"><img src="capturas/CDA-ITO-015-RI1-p2.png" alt=""><div class="pie"><b>Figura 29.</b> Página 2: resumen, próxima visita y firmas.</div></div>
+  </div>
+</div>
+
+<!-- ============ 9 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 9</p>
+  <h1>Dashboards</h1>
+  <h2>Dashboard del proyecto</h2>
+  <p>Desde el detalle del proyecto. Muestra los totales de puntos por estado, una barra de colores, el <b>% de avance</b> (puntos cerrados sobre los que aplican; los anulados no cuentan) y la lista de inspecciones por fecha con lo que se cerró, anuló o quedó pendiente en cada una. Al tocar una inspección se abre su reporte.</p>
+  <h2>Dashboard general</h2>
+  <p>Desde el ícono 📊 de la pantalla principal. Resume todos los proyectos: cuántos hay por estado, el total de puntos cerrados, pendientes y anulados, y el <b>avance de cada proyecto</b> con su barra. Los proyectos con más puntos por cerrar aparecen primero, para ver de un vistazo dónde hay trabajo pendiente.</p>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/dashboard-proyecto.png" alt=""><div class="pie"><b>Figura 30.</b> Dashboard del proyecto.</div></div>
+    <div class="fig"><img src="capturas/dashboard-general.png" alt=""><div class="pie"><b>Figura 31.</b> Dashboard general.</div></div>
+  </div>
+  <div class="figuras">
+    <div class="fig"><img src="capturas/dashboard-proyecto-inspecciones.png" alt=""><div class="pie"><b>Figura 32.</b> Dashboard del proyecto, más abajo: inspecciones por fecha.</div></div>
+    <div class="fig"><img src="capturas/dashboard-general-avance.png" alt=""><div class="pie"><b>Figura 33.</b> Dashboard general, más abajo: avance por proyecto.</div></div>
+  </div>
+</div>
+
+<!-- ============ 10 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 10</p>
+  <h1>Consejos de terreno y preguntas frecuentes</h1>
+  <h3>Configura el proyecto en la oficina</h3>
+  <p>Carga sectores, puntos, alcance y documentos de referencia antes de salir a terreno. En terreno solo tendrás que elegir el punto, fotografiar y escribir la observación.</p>
+  <h3>Con guantes y a pleno sol</h3>
+  <p>Los botones son grandes a propósito y los colores de alto contraste. Si cuesta leer, sube el brillo del teléfono; no hace falta cambiar nada en la app.</p>
+  <h3>¿Tomé una foto mala?</h3>
+  <p>En la pantalla de fotos, toca la foto y elige <b>Quitar foto</b>. Luego toma otra.</p>
+  <h3>¿Me equivoqué de estado o de observación?</h3>
+  <p>Antes de guardar puedes volver con <kbd>Volver a las fotos</kbd>. Si ya guardaste el punto, termina la inspección y corrígelo en la siguiente Re-Inspección, o descarta la inspección completa desde el proyecto y hazla de nuevo.</p>
+  <h3>¿Puedo borrar un punto que ya tiene inspecciones?</h3>
+  <p>Sí, desde «Sectores y puntos», pero se borra también su historial y sus fotos. Si el punto dejó de aplicar, es mejor <b>anularlo</b> en la inspección: queda registrado en el reporte con su motivo.</p>
+  <h3>¿Qué pasa con los documentos de referencia que borro?</h3>
+  <p>Si un punto pendiente los citaba, dejan de aparecer en ese punto. Es preferible editarlos en vez de borrarlos.</p>
+  <h3>¿El PDF tarda en generarse?</h3>
+  <p>Depende de la cantidad de fotos: unos segundos por cada 10 fotos. La app reduce las fotos dentro del PDF para que pese poco y se pueda enviar por WhatsApp.</p>
+  <h3>¿Dónde están mis PDF?</h3>
+  <p>Dentro de la app, en la lista de reportes de cada proyecto. Para tenerlos fuera del teléfono, compártelos a Drive o por correo.</p>
+  <h3>Cambié de teléfono</h3>
+  <p>Los datos no se traspasan automáticamente. Comparte los PDF antes de cambiar y vuelve a configurar los proyectos en el teléfono nuevo.</p>
+</div>
+
+<!-- ============ 11 ============ -->
+<div class="capitulo">
+  <p class="eyebrow">Capítulo 11</p>
+  <h1>Resumen de estados y colores</h1>
+  <h2>Estados de un punto</h2>
+  <table>
+    <tr><th style="width:24%">Estado</th><th>Significado</th><th style="width:30%">Vuelve a aparecer</th></tr>
+    <tr><td><span class="chip c-rev">POR REVISAR</span></td><td>Todavía no se ha inspeccionado (o se agregó después de la Primera Inspección).</td><td>Sí, en la próxima inspección.</td></tr>
+    <tr><td><span class="chip c-ok">CERRADO</span></td><td>Conforme, o hallazgo corregido.</td><td>No.</td></tr>
+    <tr><td><span class="chip c-pen">PENDIENTE</span></td><td>Con hallazgo que el contratista debe corregir. Lleva documento de referencia.</td><td>Sí, en la próxima Re-Inspección.</td></tr>
+    <tr><td><span class="chip c-anu">ANULADO</span></td><td>Dejó de aplicar. Queda registrado con su motivo.</td><td>No.</td></tr>
+  </table>
+  <h2>Tipos de inspección y código del reporte</h2>
+  <table>
+    <tr><th>Inspección</th><th>Qué revisa</th><th>Código del reporte</th></tr>
+    <tr><td>Primera Inspección</td><td>Todos los puntos configurados.</td><td>Código del proyecto (ej. CDA-ITO-015)</td></tr>
+    <tr><td>Re-Inspección N° 1, 2, 3…</td><td>Solo los pendientes y los puntos nuevos.</td><td>Código del proyecto + -RI1, -RI2… (ej. CDA-ITO-015-RI1)</td></tr>
+  </table>
+  <h2>Estados del proyecto</h2>
+  <p><b>Pendiente</b> → <b>En ejecución</b> → <b>Cerrado</b>. Los cambias tú desde el detalle del proyecto; sirven para filtrar la lista y para el dashboard general.</p>
+</div>
+
+</body>
+</html>
